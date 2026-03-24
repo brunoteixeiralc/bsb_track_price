@@ -5,10 +5,8 @@ import { convertToBRL } from "../services/currency";
 
 const APIFY_BASE = "https://api.apify.com/v2";
 
-// ⚠️  IMPORTANTE: Ajuste o mapeamento abaixo conforme o Actor do Apify que você escolher.
-// Cada actor retorna um schema diferente. Este código assume um schema genérico.
-// Recomendação: "tri_angle/google-flights-scraper" ou "curious_coder/google-flights-scraper"
-// Consulte a documentação do actor escolhido para ajustar os campos.
+// Actor: 1dYHRKkEBHBPd0JM7 (Google Flights scraper)
+// Schema: cada item do dataset contém best_flights e other_flights
 
 interface ApifyRunResult {
   id: string;
@@ -16,18 +14,22 @@ interface ApifyRunResult {
   defaultDatasetId: string;
 }
 
-interface ApifyFlightItem {
-  // Schema genérico — ajuste conforme o actor escolhido
-  price?: number;
-  currency?: string;
-  origin?: string;
-  destination?: string;
-  departureDate?: string;
-  returnDate?: string;
+interface ApifyFlightLeg {
+  departure_airport?: { id?: string; time?: string };
+  arrival_airport?: { id?: string; time?: string };
   airline?: string;
-  url?: string;
-  link?: string;
-  bookingUrl?: string;
+}
+
+interface ApifyFlightOption {
+  price?: number;
+  booking_token?: string;
+  flights?: ApifyFlightLeg[];
+}
+
+interface ApifyDatasetItem {
+  search_parameters?: { departure_id?: string; arrival_id?: string; outbound_date?: string };
+  best_flights?: ApifyFlightOption[];
+  other_flights?: ApifyFlightOption[];
 }
 
 export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
@@ -38,13 +40,18 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
     const runResponse = await axios.post(
       `${APIFY_BASE}/acts/${config.apify.actorId}/runs`,
       {
-        // Input do actor — ajuste conforme a documentação do actor escolhido
-        origin: params.origin,
-        destination: params.destination,
-        departureDate: params.departureDate,
-        returnDate: params.returnDate,
+        departure_id: params.origin,
+        arrival_id: params.destination,
+        outbound_date: params.departureDate,
+        ...(params.returnDate ? { return_date: params.returnDate } : {}),
         currency: "BRL",
         adults: 1,
+        children: 0,
+        infants: 0,
+        hl: "en",
+        gl: "us",
+        exclude_basic: false,
+        max_pages: 1,
       },
       {
         headers: { Authorization: `Bearer ${config.apify.token}` },
@@ -65,37 +72,52 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
       `${APIFY_BASE}/datasets/${run.defaultDatasetId}/items`,
       {
         headers: { Authorization: `Bearer ${config.apify.token}` },
-        params: { limit: 50 },
+        params: { limit: 10 },
       }
     );
 
-    const items: ApifyFlightItem[] = datasetResponse.data;
-    console.log(`[apify] ${items.length} resultado(s) retornado(s)`);
+    const items: ApifyDatasetItem[] = datasetResponse.data;
 
-    // 3. Mapeia para o tipo Flight
+    // 3. Extrai e mapeia voos de best_flights + other_flights
     const flights: Flight[] = [];
 
     for (const item of items) {
-      if (!item.price || !item.url && !item.link && !item.bookingUrl) continue;
+      const allOptions = [
+        ...(item.best_flights ?? []),
+        ...(item.other_flights ?? []),
+      ];
 
-      const currency = item.currency ?? "BRL";
-      const price = item.price;
-      const priceBRL = await convertToBRL(price, currency);
+      for (const option of allOptions) {
+        if (!option.price) continue;
 
-      flights.push({
-        origin: item.origin ?? params.origin,
-        destination: item.destination ?? params.destination,
-        departureDate: item.departureDate ?? params.departureDate,
-        returnDate: item.returnDate ?? params.returnDate,
-        price,
-        currency,
-        priceBRL,
-        airline: item.airline,
-        link: item.url ?? item.link ?? item.bookingUrl ?? "",
-        source: "apify",
-      });
+        const leg = option.flights?.[0];
+        const departureDate = leg?.departure_airport?.time?.split(" ")[0] ?? params.departureDate;
+        const airline = leg?.airline;
+        const origin = leg?.departure_airport?.id ?? params.origin;
+        const destination = leg?.arrival_airport?.id ?? params.destination;
+
+        // Preço já vem em BRL (currency=BRL solicitado)
+        const priceBRL = await convertToBRL(option.price, "BRL");
+
+        // Link de busca no Google Flights
+        const link = `https://www.google.com/travel/flights?q=flights+from+${origin}+to+${destination}+on+${departureDate}`;
+
+        flights.push({
+          origin,
+          destination,
+          departureDate,
+          returnDate: params.returnDate,
+          price: option.price,
+          currency: "BRL",
+          priceBRL,
+          airline,
+          link,
+          source: "apify",
+        });
+      }
     }
 
+    console.log(`[apify] ${flights.length} voo(s) mapeado(s)`);
     return flights;
   } catch (err) {
     console.error("[apify] Erro na busca:", err);

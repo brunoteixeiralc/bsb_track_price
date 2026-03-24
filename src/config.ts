@@ -12,7 +12,7 @@ export const config = {
     token: required("APIFY_API_TOKEN"),
     // Actor ID do scraper de voos no Apify — ajuste conforme o actor que você usar
     // Sugestão: "tri_angle/google-flights-scraper" ou similar
-    actorId: process.env.APIFY_ACTOR_ID ?? "tri_angle/google-flights-scraper",
+    actorId: process.env.APIFY_ACTOR_ID ?? "tri_angle~google-flights-scraper",
   },
   rapidapi: {
     key: required("RAPIDAPI_KEY"),

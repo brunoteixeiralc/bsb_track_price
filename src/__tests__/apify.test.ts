@@ -33,69 +33,83 @@ const params = {
   departureDate: "2026-06-01",
 };
 
+// Helper: cria um item de dataset válido com best_flights
+function makeDatasetItem(options: { price: number; airline?: string }[]) {
+  return [
+    {
+      best_flights: options.map(({ price, airline }) => ({
+        price,
+        booking_token: "token123",
+        flights: [
+          {
+            departure_airport: { id: "BSB", time: "2026-06-01 10:00" },
+            arrival_airport: { id: "GRU", time: "2026-06-01 12:00" },
+            airline: airline ?? "LATAM",
+          },
+        ],
+      })),
+      other_flights: [],
+    },
+  ];
+}
+
 describe("searchWithApify", () => {
   it("retorna voos mapeados quando o actor finaliza com sucesso", async () => {
     mock.onPost(/acts\/test-actor\/runs/).reply(200, {
       data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
     });
-    mock.onGet(/datasets\/ds1\/items/).reply(200, [
-      {
-        price: 100,
-        currency: "USD",
-        origin: "BSB",
-        destination: "GRU",
-        departureDate: "2026-06-01",
-        url: "https://example.com",
-        airline: "LATAM",
-      },
-    ]);
+    mock.onGet(/datasets\/ds1\/items/).reply(200, makeDatasetItem([{ price: 1500, airline: "Gol" }]));
 
     const { searchWithApify } = await import("../apis/apify");
     const flights = await searchWithApify(params);
 
     expect(flights).toHaveLength(1);
     expect(flights[0].source).toBe("apify");
-    expect(flights[0].link).toBe("https://example.com");
-    expect(flights[0].airline).toBe("LATAM");
+    expect(flights[0].airline).toBe("Gol");
     expect(flights[0].priceBRL).toBe(500);
+    expect(flights[0].currency).toBe("BRL");
   });
 
-  it("usa o campo 'link' quando 'url' não está presente", async () => {
+  it("constrói link do Google Flights com origem, destino e data", async () => {
+    mock.onPost(/acts\/test-actor\/runs/).reply(200, {
+      data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
+    });
+    mock.onGet(/datasets\/ds1\/items/).reply(200, makeDatasetItem([{ price: 1200 }]));
+
+    const { searchWithApify } = await import("../apis/apify");
+    const flights = await searchWithApify(params);
+
+    expect(flights[0].link).toContain("google.com/travel/flights");
+    expect(flights[0].link).toContain("BSB");
+    expect(flights[0].link).toContain("GRU");
+  });
+
+  it("mapeia voos de other_flights também", async () => {
     mock.onPost(/acts\/test-actor\/runs/).reply(200, {
       data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
     });
     mock.onGet(/datasets\/ds1\/items/).reply(200, [
-      { price: 200, currency: "BRL", link: "https://booking.com/flight" },
+      {
+        best_flights: [{ price: 1000, flights: [{ departure_airport: { id: "BSB", time: "2026-06-01 08:00" }, arrival_airport: { id: "GRU" }, airline: "LATAM" }] }],
+        other_flights: [{ price: 1200, flights: [{ departure_airport: { id: "BSB", time: "2026-06-01 14:00" }, arrival_airport: { id: "GRU" }, airline: "Azul" }] }],
+      },
     ]);
 
     const { searchWithApify } = await import("../apis/apify");
     const flights = await searchWithApify(params);
 
-    expect(flights).toHaveLength(1);
-    expect(flights[0].link).toBe("https://booking.com/flight");
+    expect(flights).toHaveLength(2);
   });
 
-  it("usa o campo 'bookingUrl' quando 'url' e 'link' não estão presentes", async () => {
+  it("ignora opções sem preço", async () => {
     mock.onPost(/acts\/test-actor\/runs/).reply(200, {
       data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
     });
     mock.onGet(/datasets\/ds1\/items/).reply(200, [
-      { price: 200, currency: "BRL", bookingUrl: "https://booking.com/alt" },
-    ]);
-
-    const { searchWithApify } = await import("../apis/apify");
-    const flights = await searchWithApify(params);
-
-    expect(flights).toHaveLength(1);
-    expect(flights[0].link).toBe("https://booking.com/alt");
-  });
-
-  it("ignora itens sem preço", async () => {
-    mock.onPost(/acts\/test-actor\/runs/).reply(200, {
-      data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
-    });
-    mock.onGet(/datasets\/ds1\/items/).reply(200, [
-      { currency: "BRL", url: "https://example.com" },
+      {
+        best_flights: [{ flights: [{ departure_airport: { id: "BSB" }, arrival_airport: { id: "GRU" }, airline: "Gol" }] }],
+        other_flights: [],
+      },
     ]);
 
     const { searchWithApify } = await import("../apis/apify");
@@ -125,12 +139,15 @@ describe("searchWithApify", () => {
     expect(flights).toHaveLength(0);
   });
 
-  it("usa parâmetros de busca como fallback para campos ausentes no item", async () => {
+  it("usa parâmetros de busca como fallback para campos ausentes no leg", async () => {
     mock.onPost(/acts\/test-actor\/runs/).reply(200, {
       data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
     });
     mock.onGet(/datasets\/ds1\/items/).reply(200, [
-      { price: 300, currency: "BRL", url: "https://example.com" },
+      {
+        best_flights: [{ price: 800, flights: [{}] }],
+        other_flights: [],
+      },
     ]);
 
     const { searchWithApify } = await import("../apis/apify");
