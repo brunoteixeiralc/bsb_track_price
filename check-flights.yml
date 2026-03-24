@@ -1,0 +1,42 @@
+name: Check Flights
+
+on:
+  schedule:
+    # 08:00 BRT = 11:00 UTC
+    - cron: "0 11 * * *"
+    # 20:00 BRT = 23:00 UTC
+    - cron: "0 23 * * *"
+  workflow_dispatch: # permite rodar manualmente pelo GitHub
+
+jobs:
+  check:
+    name: Check cheap flights
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run flight tracker
+        env:
+          APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ORIGIN: ${{ secrets.ORIGIN }}
+          DESTINATION: ${{ secrets.DESTINATION }}
+          DEPARTURE_DATE: ${{ secrets.DEPARTURE_DATE }}
+          RETURN_DATE: ${{ secrets.RETURN_DATE }}
+          MAX_PRICE_BRL: ${{ secrets.MAX_PRICE_BRL }}
+          APIFY_ACTOR_ID: ${{ secrets.APIFY_ACTOR_ID }}
+          RAPIDAPI_HOST: ${{ secrets.RAPIDAPI_HOST }}
+        run: npx ts-node src/index.ts
