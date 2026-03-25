@@ -32,11 +32,13 @@ jest.mock("../apis/rapidapi", () => ({
 }));
 
 const mockSendDateRangeSummary = jest.fn();
+const mockSendErrorAlert = jest.fn();
 
 jest.mock("../services/telegram", () => ({
   sendFlightAlert: (...args: unknown[]) => mockSendFlightAlert(...args),
   sendSummary: (...args: unknown[]) => mockSendSummary(...args),
   sendDateRangeSummary: (...args: unknown[]) => mockSendDateRangeSummary(...args),
+  sendErrorAlert: (...args: unknown[]) => mockSendErrorAlert(...args),
 }));
 
 jest.mock("../services/history", () => ({
@@ -57,6 +59,7 @@ beforeEach(() => {
   mockSendFlightAlert.mockResolvedValue(undefined);
   mockSendSummary.mockResolvedValue(undefined);
   mockSendDateRangeSummary.mockResolvedValue(undefined);
+  mockSendErrorAlert.mockResolvedValue(undefined);
   mockAppendHistory.mockReturnValue(undefined);
   mockConfig.search.destinations = ["GRU"];
   mockConfig.search.dateRangeDays = 1;
@@ -139,6 +142,20 @@ describe("runTracker", () => {
 
     const { runTracker } = await import("../services/tracker");
     await expect(runTracker()).rejects.toThrow();
+  });
+
+  it("envia alerta de erro no Telegram quando ambas as APIs falham (data única)", async () => {
+    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
+    mockSearchWithRapidAPI.mockRejectedValue(new Error("RapidAPI down"));
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker().catch(() => {});
+
+    expect(mockSendErrorAlert).toHaveBeenCalledTimes(1);
+    expect(mockSendErrorAlert).toHaveBeenCalledWith(
+      "BSB→GRU",
+      expect.stringContaining("2026-06-01")
+    );
   });
 
   it("busca múltiplos destinos em sequência", async () => {
@@ -255,5 +272,33 @@ describe("runTracker", () => {
 
     expect(mockSendFlightAlert).not.toHaveBeenCalled();
     expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, null, 300, "one-way");
+  });
+
+  it("envia alerta de erro quando todas as datas do intervalo falham", async () => {
+    mockConfig.search.dateRangeDays = 3;
+    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
+    mockSearchWithRapidAPI.mockRejectedValue(new Error("RapidAPI down"));
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    expect(mockSendErrorAlert).toHaveBeenCalledTimes(1);
+    expect(mockSendErrorAlert).toHaveBeenCalledWith(
+      "BSB→GRU",
+      expect.stringContaining("3 data(s)")
+    );
+  });
+
+  it("não envia alerta de erro quando apenas algumas datas do intervalo falham", async () => {
+    mockConfig.search.dateRangeDays = 2;
+    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
+    mockSearchWithRapidAPI
+      .mockRejectedValueOnce(new Error("RapidAPI down")) // primeira data falha
+      .mockResolvedValueOnce([makeFlight(250)]);          // segunda data ok
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    expect(mockSendErrorAlert).not.toHaveBeenCalled();
   });
 });

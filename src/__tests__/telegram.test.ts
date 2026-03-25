@@ -191,3 +191,26 @@ describe("sendDateRangeSummary", () => {
     expect(requestBody.text).toContain("Ida e Volta");
   });
 });
+
+describe("sendErrorAlert", () => {
+  it("envia alerta com rota e detalhes do erro", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendErrorAlert } = await import("../services/telegram");
+    await sendErrorAlert("BSB→GRU", "Busca de 2026-06-01 falhou.");
+
+    const requestBody = JSON.parse(mock.history.post[0].data);
+    expect(requestBody.chat_id).toBe("123456");
+    expect(requestBody.parse_mode).toBe("Markdown");
+    expect(requestBody.text).toContain("BSB→GRU");
+    expect(requestBody.text).toContain("Busca de 2026-06-01 falhou.");
+    expect(requestBody.text).toContain("⚠️");
+  });
+
+  it("não lança erro se a API do Telegram falhar", async () => {
+    mock.onPost(/sendMessage/).networkError();
+
+    const { sendErrorAlert } = await import("../services/telegram");
+    await expect(sendErrorAlert("BSB→GRU", "falha")).resolves.not.toThrow();
+  });
+});

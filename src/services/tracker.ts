@@ -2,7 +2,7 @@ import { config } from "../config";
 import { Flight, SearchParams } from "../types";
 import { searchWithApify } from "../apis/apify";
 import { searchWithRapidAPI } from "../apis/rapidapi";
-import { sendFlightAlert, sendSummary, sendDateRangeSummary } from "./telegram";
+import { sendFlightAlert, sendSummary, sendDateRangeSummary, sendErrorAlert } from "./telegram";
 import { appendHistory } from "./history";
 import { withRetry } from "../utils/retry";
 import { generateDateRange } from "../utils/dates";
@@ -57,6 +57,7 @@ async function searchAndNotify(params: SearchParams): Promise<void> {
     flights = await fetchFlights(params);
   } catch (err) {
     console.error("[tracker] Ambas as APIs falharam.", err);
+    await sendErrorAlert(route, `Busca de ${params.departureDate} falhou. Apify e RapidAPI indisponíveis.`);
     throw new Error("Todas as fontes de dados falharam.");
   }
 
@@ -95,6 +96,7 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
   console.log(`[tracker] Varrendo ${dates.length} data(s) para ${route}...`);
 
   const cheapestPerDate: Flight[] = [];
+  let apiFailures = 0;
 
   for (const date of dates) {
     const params: SearchParams = { ...baseParams, departureDate: date };
@@ -104,6 +106,7 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
     try {
       flights = await fetchFlights(params);
     } catch (err) {
+      apiFailures++;
       console.warn(`[tracker] ${route} em ${date} falhou, pulando...`, (err as Error).message);
       continue;
     }
@@ -128,6 +131,10 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
     if (flights.length > 0) {
       cheapestPerDate.push(flights.reduce((a, b) => (a.priceBRL < b.priceBRL ? a : b)));
     }
+  }
+
+  if (apiFailures === dates.length) {
+    await sendErrorAlert(route, `${dates.length} data(s) verificada(s), todas falharam. Apify e RapidAPI indisponíveis.`);
   }
 
   const best =
