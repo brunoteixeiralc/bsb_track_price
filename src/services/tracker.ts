@@ -3,6 +3,7 @@ import { Flight, SearchParams } from "../types";
 import { searchWithApify } from "../apis/apify";
 import { searchWithRapidAPI } from "../apis/rapidapi";
 import { sendFlightAlert, sendSummary } from "./telegram";
+import { appendHistory } from "./history";
 
 export async function runTracker(): Promise<void> {
   const params: SearchParams = {
@@ -31,6 +32,24 @@ export async function runTracker(): Promise<void> {
       throw new Error("Todas as fontes de dados falharam.");
     }
   }
+
+  // Salva histórico com todos os voos encontrados
+  appendHistory({
+    timestamp: new Date().toISOString(),
+    origin: params.origin,
+    destination: params.destination,
+    departureDate: params.departureDate,
+    returnDate: params.returnDate,
+    totalFound: flights.length,
+    cheapestPriceBRL: flights.length > 0 ? Math.min(...flights.map((f) => f.priceBRL)) : null,
+    flights: flights.map((f) => ({
+      airline: f.airline,
+      priceBRL: f.priceBRL,
+      departureTime: f.departureDate,
+      link: f.link,
+      source: f.source,
+    })),
+  });
 
   // Filtra por threshold de preço
   const cheapFlights = flights

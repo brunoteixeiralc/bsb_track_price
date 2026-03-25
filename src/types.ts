@@ -18,6 +18,23 @@ export interface SearchParams {
   returnDate?: string;
 }
 
+export interface HistoryEntry {
+  timestamp: string;
+  origin: string;
+  destination: string;
+  departureDate: string;
+  returnDate?: string;
+  totalFound: number;
+  cheapestPriceBRL: number | null;
+  flights: Array<{
+    airline?: string;
+    priceBRL: number;
+    departureTime?: string;
+    link: string;
+    source: string;
+  }>;
+}
+
 export interface CurrencyRate {
   from: string;
   to: string;

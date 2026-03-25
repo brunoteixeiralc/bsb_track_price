@@ -1,0 +1,96 @@
+[
+  {
+    "timestamp": "2026-03-25T00:11:00.088Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-06-01",
+    "totalFound": 3,
+    "cheapestPriceBRL": 200,
+    "flights": [
+      {
+        "priceBRL": 200,
+        "departureTime": "2026-06-01",
+        "link": "https://example.com",
+        "source": "apify"
+      },
+      {
+        "priceBRL": 350,
+        "departureTime": "2026-06-01",
+        "link": "https://example.com",
+        "source": "apify"
+      },
+      {
+        "priceBRL": 280,
+        "departureTime": "2026-06-01",
+        "link": "https://example.com",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T00:11:00.090Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-06-01",
+    "totalFound": 3,
+    "cheapestPriceBRL": 150,
+    "flights": [
+      {
+        "priceBRL": 280,
+        "departureTime": "2026-06-01",
+        "link": "https://example.com",
+        "source": "apify"
+      },
+      {
+        "priceBRL": 150,
+        "departureTime": "2026-06-01",
+        "link": "https://example.com",
+        "source": "apify"
+      },
+      {
+        "priceBRL": 200,
+        "departureTime": "2026-06-01",
+        "link": "https://example.com",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T00:11:00.094Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-06-01",
+    "totalFound": 2,
+    "cheapestPriceBRL": 400,
+    "flights": [
+      {
+        "priceBRL": 400,
+        "departureTime": "2026-06-01",
+        "link": "https://example.com",
+        "source": "apify"
+      },
+      {
+        "priceBRL": 500,
+        "departureTime": "2026-06-01",
+        "link": "https://example.com",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T00:11:00.095Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-06-01",
+    "totalFound": 1,
+    "cheapestPriceBRL": 250,
+    "flights": [
+      {
+        "priceBRL": 250,
+        "departureTime": "2026-06-01",
+        "link": "https://example.com",
+        "source": "apify"
+      }
+    ]
+  }
+]
