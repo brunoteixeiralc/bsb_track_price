@@ -95,3 +95,60 @@ describe("sendSummary", () => {
     expect(requestBody.text).toContain("3");
   });
 });
+
+describe("sendDateRangeSummary", () => {
+  it("envia mensagem com melhor voo quando abaixo do threshold", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendDateRangeSummary } = await import("../services/telegram");
+    const best: Flight = {
+      origin: "BSB",
+      destination: "GRU",
+      departureDate: "2026-06-05",
+      price: 200,
+      currency: "BRL",
+      priceBRL: 200,
+      link: "https://example.com",
+      source: "apify",
+      airline: "LATAM",
+    };
+    await sendDateRangeSummary("BSB→GRU", 3, best, 300);
+
+    const requestBody = JSON.parse(mock.history.post[0].data);
+    expect(requestBody.text).toContain("BSB→GRU");
+    expect(requestBody.text).toContain("3");
+    expect(requestBody.text).toContain("200");
+    expect(requestBody.text).toContain("05/06/2026");
+    expect(requestBody.text).toContain("LATAM");
+  });
+
+  it("envia mensagem sem voo quando melhor preço está acima do threshold", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendDateRangeSummary } = await import("../services/telegram");
+    const best: Flight = {
+      origin: "BSB",
+      destination: "GRU",
+      departureDate: "2026-06-05",
+      price: 500,
+      currency: "BRL",
+      priceBRL: 500,
+      link: "https://example.com",
+      source: "apify",
+    };
+    await sendDateRangeSummary("BSB→GRU", 3, best, 300);
+
+    const requestBody = JSON.parse(mock.history.post[0].data);
+    expect(requestBody.text).toContain("Nenhum voo");
+  });
+
+  it("envia mensagem sem voo quando bestFlight é null", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendDateRangeSummary } = await import("../services/telegram");
+    await sendDateRangeSummary("BSB→GRU", 2, null, 300);
+
+    const requestBody = JSON.parse(mock.history.post[0].data);
+    expect(requestBody.text).toContain("Nenhum voo");
+  });
+});

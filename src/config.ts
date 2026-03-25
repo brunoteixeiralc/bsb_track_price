@@ -32,6 +32,7 @@ export const config = {
       return raw.split(",").map((s) => s.trim()).filter(Boolean);
     })(),
     departureDate: required("DEPARTURE_DATE"),
+    dateRangeDays: Number(process.env.DATE_RANGE_DAYS ?? "1"),
     returnDate: process.env.RETURN_DATE,
     maxPriceBRL: Number(process.env.MAX_PRICE_BRL ?? "300"),
   },

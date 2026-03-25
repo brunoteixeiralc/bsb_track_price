@@ -8,6 +8,7 @@ const mockConfig = {
     origin: "BSB",
     destinations: ["GRU"],
     departureDate: "2026-06-01",
+    dateRangeDays: 1,
     returnDate: undefined,
     maxPriceBRL: 300,
   },
@@ -29,9 +30,12 @@ jest.mock("../apis/rapidapi", () => ({
   searchWithRapidAPI: (...args: unknown[]) => mockSearchWithRapidAPI(...args),
 }));
 
+const mockSendDateRangeSummary = jest.fn();
+
 jest.mock("../services/telegram", () => ({
   sendFlightAlert: (...args: unknown[]) => mockSendFlightAlert(...args),
   sendSummary: (...args: unknown[]) => mockSendSummary(...args),
+  sendDateRangeSummary: (...args: unknown[]) => mockSendDateRangeSummary(...args),
 }));
 
 jest.mock("../services/history", () => ({
@@ -51,8 +55,10 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockSendFlightAlert.mockResolvedValue(undefined);
   mockSendSummary.mockResolvedValue(undefined);
+  mockSendDateRangeSummary.mockResolvedValue(undefined);
   mockAppendHistory.mockReturnValue(undefined);
   mockConfig.search.destinations = ["GRU"];
+  mockConfig.search.dateRangeDays = 1;
 });
 
 function makeFlight(priceBRL: number, destination = "GRU"): Flight {
@@ -179,5 +185,58 @@ describe("runTracker", () => {
     expect(mockSearchWithApify).toHaveBeenCalledTimes(2);
     expect(mockSearchWithRapidAPI).not.toHaveBeenCalled();
     expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
+  });
+
+  it("com dateRangeDays=3 busca API 3x e alerta a data mais barata", async () => {
+    mockConfig.search.dateRangeDays = 3;
+    mockSearchWithApify
+      .mockResolvedValueOnce([makeFlight(500)])  // 2026-06-01
+      .mockResolvedValueOnce([makeFlight(200)])  // 2026-06-02 — mais barata
+      .mockResolvedValueOnce([makeFlight(350)]); // 2026-06-03
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    expect(mockSearchWithApify).toHaveBeenCalledTimes(3);
+    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
+    expect((mockSendFlightAlert.mock.calls[0][0] as Flight).priceBRL).toBe(200);
+    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 3, expect.objectContaining({ priceBRL: 200 }), 300);
+  });
+
+  it("com dateRangeDays>1 não alerta se nenhuma data estiver abaixo do threshold", async () => {
+    mockConfig.search.dateRangeDays = 2;
+    mockSearchWithApify.mockResolvedValue([makeFlight(400)]);
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    expect(mockSendFlightAlert).not.toHaveBeenCalled();
+    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, expect.objectContaining({ priceBRL: 400 }), 300);
+  });
+
+  it("com dateRangeDays>1 pula datas onde ambas as APIs falham", async () => {
+    mockConfig.search.dateRangeDays = 2;
+    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
+    mockSearchWithRapidAPI
+      .mockRejectedValueOnce(new Error("RapidAPI down"))  // primeira data falha
+      .mockResolvedValueOnce([makeFlight(250)]);           // segunda data ok
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
+    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, expect.objectContaining({ priceBRL: 250 }), 300);
+  });
+
+  it("com dateRangeDays>1 envia summary com best=null quando todas as datas falham", async () => {
+    mockConfig.search.dateRangeDays = 2;
+    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
+    mockSearchWithRapidAPI.mockRejectedValue(new Error("RapidAPI down"));
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    expect(mockSendFlightAlert).not.toHaveBeenCalled();
+    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, null, 300);
   });
 });

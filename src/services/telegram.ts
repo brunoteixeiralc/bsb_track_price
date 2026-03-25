@@ -67,6 +67,28 @@ export async function sendHealthCheck(): Promise<void> {
   }
 }
 
+export async function sendDateRangeSummary(
+  route: string,
+  datesChecked: number,
+  bestFlight: Flight | null,
+  threshold: number
+): Promise<void> {
+  const noBest = !bestFlight || bestFlight.priceBRL > threshold;
+  const text = noBest
+    ? `🗓️ *${route}* — ${datesChecked} data(s) verificada(s). Nenhum voo abaixo de ${formatBRL(threshold)}.`
+    : `🗓️ *${route}* — ${datesChecked} data(s) verificada(s).\n💰 Melhor: *${formatBRL(bestFlight!.priceBRL)}* em ${formatDate(bestFlight!.departureDate)}${bestFlight!.airline ? ` (${bestFlight!.airline})` : ""}`;
+
+  try {
+    await axios.post(`${BASE_URL}/sendMessage`, {
+      chat_id: config.telegram.chatId,
+      text,
+      parse_mode: "Markdown",
+    });
+  } catch (err) {
+    console.error("[telegram] Erro ao enviar resumo de intervalo:", err);
+  }
+}
+
 export async function sendSummary(found: number, checked: number, route?: string): Promise<void> {
   const prefix = route ? `${route} — ` : "";
   const text = found === 0
