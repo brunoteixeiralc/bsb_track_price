@@ -90,6 +90,7 @@ export async function searchWithRapidAPI(params: SearchParams): Promise<Flight[]
         destination: leg?.destination?.displayCode ?? params.destination,
         departureDate,
         returnDate: params.returnDate,
+        tripType: params.tripType,
         price: priceRaw,
         currency: "BRL",
         priceBRL,

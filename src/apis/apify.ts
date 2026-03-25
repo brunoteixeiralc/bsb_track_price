@@ -107,6 +107,7 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
           destination,
           departureDate,
           returnDate: params.returnDate,
+          tripType: params.tripType,
           price: option.price,
           currency: "BRL",
           priceBRL,

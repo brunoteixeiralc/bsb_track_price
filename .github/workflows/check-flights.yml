@@ -38,6 +38,7 @@ jobs:
           DESTINATIONS: ${{ secrets.DESTINATIONS }}
           DEPARTURE_DATE: ${{ secrets.DEPARTURE_DATE }}
           DATE_RANGE_DAYS: ${{ secrets.DATE_RANGE_DAYS }}
+          TRIP_TYPE: ${{ secrets.TRIP_TYPE }}
           RETURN_DATE: ${{ secrets.RETURN_DATE }}
           MAX_PRICE_BRL: ${{ secrets.MAX_PRICE_BRL }}
           APIFY_ACTOR_ID: ${{ secrets.APIFY_ACTOR_ID }}

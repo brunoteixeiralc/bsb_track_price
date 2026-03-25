@@ -33,7 +33,23 @@ export const config = {
     })(),
     departureDate: required("DEPARTURE_DATE"),
     dateRangeDays: Number(process.env.DATE_RANGE_DAYS ?? "1"),
-    returnDate: process.env.RETURN_DATE,
+    tripType: (() => {
+      const t = process.env.TRIP_TYPE ?? "one-way";
+      if (t !== "one-way" && t !== "round-trip") {
+        throw new Error("TRIP_TYPE deve ser 'one-way' ou 'round-trip'");
+      }
+      return t as "one-way" | "round-trip";
+    })(),
+    returnDate: (() => {
+      const tripType = process.env.TRIP_TYPE ?? "one-way";
+      if (tripType === "round-trip") {
+        if (!process.env.RETURN_DATE) {
+          throw new Error("Missing required env var: RETURN_DATE (obrigatório para round-trip)");
+        }
+        return process.env.RETURN_DATE;
+      }
+      return undefined;
+    })(),
     maxPriceBRL: Number(process.env.MAX_PRICE_BRL ?? "300"),
   },
 };

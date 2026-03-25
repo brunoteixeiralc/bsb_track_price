@@ -1,8 +1,11 @@
+export type TripType = "one-way" | "round-trip";
+
 export interface Flight {
   origin: string;
   destination: string;
   departureDate: string;
   returnDate?: string;
+  tripType: TripType;
   price: number;        // preço na moeda original
   currency: string;     // ex: "USD", "BRL"
   priceBRL: number;     // preço convertido para BRL
@@ -16,6 +19,7 @@ export interface SearchParams {
   destination: string;
   departureDate: string;
   returnDate?: string;
+  tripType: TripType;
 }
 
 export interface HistoryEntry {

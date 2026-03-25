@@ -1,6 +1,6 @@
 import axios from "axios";
 import { config } from "../config";
-import { Flight } from "../types";
+import { Flight, TripType } from "../types";
 import { formatBRL } from "./currency";
 
 const BASE_URL = `https://api.telegram.org/bot${config.telegram.botToken}`;
@@ -11,10 +11,13 @@ function formatDate(dateStr: string): string {
 }
 
 function buildMessage(flight: Flight): string {
+  const tripLabel = flight.tripType === "round-trip" ? "🔄 Ida e Volta" : "✈️ Somente Ida";
+
   const lines = [
     `✈️ *Passagem barata encontrada!*`,
     ``,
     `🛫 *${flight.origin} → ${flight.destination}*`,
+    `🏷️ ${tripLabel}`,
     `📅 Ida: ${formatDate(flight.departureDate)}`,
   ];
 
@@ -71,12 +74,14 @@ export async function sendDateRangeSummary(
   route: string,
   datesChecked: number,
   bestFlight: Flight | null,
-  threshold: number
+  threshold: number,
+  tripType: TripType = "one-way"
 ): Promise<void> {
+  const tripLabel = tripType === "round-trip" ? "🔄 Ida e Volta" : "✈️ Somente Ida";
   const noBest = !bestFlight || bestFlight.priceBRL > threshold;
   const text = noBest
-    ? `🗓️ *${route}* — ${datesChecked} data(s) verificada(s). Nenhum voo abaixo de ${formatBRL(threshold)}.`
-    : `🗓️ *${route}* — ${datesChecked} data(s) verificada(s).\n💰 Melhor: *${formatBRL(bestFlight!.priceBRL)}* em ${formatDate(bestFlight!.departureDate)}${bestFlight!.airline ? ` (${bestFlight!.airline})` : ""}`;
+    ? `🗓️ *${route}* (${tripLabel}) — ${datesChecked} data(s) verificada(s). Nenhum voo abaixo de ${formatBRL(threshold)}.`
+    : `🗓️ *${route}* (${tripLabel}) — ${datesChecked} data(s) verificada(s).\n💰 Melhor: *${formatBRL(bestFlight!.priceBRL)}* em ${formatDate(bestFlight!.departureDate)}${bestFlight!.airline ? ` (${bestFlight!.airline})` : ""}`;
 
   try {
     await axios.post(`${BASE_URL}/sendMessage`, {

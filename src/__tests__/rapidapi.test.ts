@@ -19,7 +19,7 @@ jest.mock("../services/currency", () => ({
 
 const mock = new MockAdapter(axios);
 
-const params = { origin: "BSB", destination: "GRU", departureDate: "2026-06-01" };
+const params = { origin: "BSB", destination: "GRU", departureDate: "2026-06-01", tripType: "one-way" as const };
 
 const airportReply = { data: [{ skyId: "BSB", entityId: "1234" }] };
 
@@ -104,5 +104,17 @@ describe("searchWithRapidAPI", () => {
 
     const { searchWithRapidAPI } = await import("../apis/rapidapi");
     await expect(searchWithRapidAPI(params)).rejects.toThrow();
+  });
+
+  it("propaga tripType para os voos retornados", async () => {
+    mock.onGet(/searchAirport/).reply(200, airportReply);
+    mock.onGet(/searchFlights/).reply(200, {
+      data: { itineraries: [makeItinerary(1200)] },
+    });
+
+    const { searchWithRapidAPI } = await import("../apis/rapidapi");
+    const flights = await searchWithRapidAPI({ ...params, tripType: "round-trip" });
+
+    expect(flights[0].tripType).toBe("round-trip");
   });
 });

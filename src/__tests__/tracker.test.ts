@@ -1,4 +1,4 @@
-import { Flight } from "../types";
+import { Flight, TripType } from "../types";
 
 const mockConfig = {
   apify: { token: "tok", actorId: "actor" },
@@ -9,7 +9,8 @@ const mockConfig = {
     destinations: ["GRU"],
     departureDate: "2026-06-01",
     dateRangeDays: 1,
-    returnDate: undefined,
+    tripType: "one-way" as TripType,
+    returnDate: undefined as string | undefined,
     maxPriceBRL: 300,
   },
 };
@@ -59,13 +60,16 @@ beforeEach(() => {
   mockAppendHistory.mockReturnValue(undefined);
   mockConfig.search.destinations = ["GRU"];
   mockConfig.search.dateRangeDays = 1;
+  mockConfig.search.tripType = "one-way";
+  mockConfig.search.returnDate = undefined;
 });
 
-function makeFlight(priceBRL: number, destination = "GRU"): Flight {
+function makeFlight(priceBRL: number, destination = "GRU", tripType: Flight["tripType"] = "one-way"): Flight {
   return {
     origin: "BSB",
     destination,
     departureDate: "2026-06-01",
+    tripType,
     price: priceBRL,
     currency: "BRL",
     priceBRL,
@@ -200,7 +204,7 @@ describe("runTracker", () => {
     expect(mockSearchWithApify).toHaveBeenCalledTimes(3);
     expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
     expect((mockSendFlightAlert.mock.calls[0][0] as Flight).priceBRL).toBe(200);
-    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 3, expect.objectContaining({ priceBRL: 200 }), 300);
+    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 3, expect.objectContaining({ priceBRL: 200 }), 300, "one-way");
   });
 
   it("com dateRangeDays>1 não alerta se nenhuma data estiver abaixo do threshold", async () => {
@@ -211,7 +215,7 @@ describe("runTracker", () => {
     await runTracker();
 
     expect(mockSendFlightAlert).not.toHaveBeenCalled();
-    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, expect.objectContaining({ priceBRL: 400 }), 300);
+    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, expect.objectContaining({ priceBRL: 400 }), 300, "one-way");
   });
 
   it("com dateRangeDays>1 pula datas onde ambas as APIs falham", async () => {
@@ -225,7 +229,20 @@ describe("runTracker", () => {
     await runTracker();
 
     expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
-    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, expect.objectContaining({ priceBRL: 250 }), 300);
+    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, expect.objectContaining({ priceBRL: 250 }), 300, "one-way");
+  });
+
+  it("passa tripType round-trip e returnDate nos params da busca", async () => {
+    mockConfig.search.tripType = "round-trip";
+    mockConfig.search.returnDate = "2026-06-10";
+    mockSearchWithApify.mockResolvedValue([makeFlight(350, "GRU", "round-trip")]);
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    expect(mockSearchWithApify).toHaveBeenCalledWith(
+      expect.objectContaining({ tripType: "round-trip", returnDate: "2026-06-10" })
+    );
   });
 
   it("com dateRangeDays>1 envia summary com best=null quando todas as datas falham", async () => {
@@ -237,6 +254,6 @@ describe("runTracker", () => {
     await runTracker();
 
     expect(mockSendFlightAlert).not.toHaveBeenCalled();
-    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, null, 300);
+    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, null, 300, "one-way");
   });
 });

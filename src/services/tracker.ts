@@ -16,6 +16,7 @@ export async function runTracker(): Promise<void> {
       destination,
       departureDate: dates[0],
       returnDate: config.search.returnDate,
+      tripType: config.search.tripType,
     };
 
     if (dates.length === 1) {
@@ -138,5 +139,5 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
     await sendFlightAlert(best);
   }
 
-  await sendDateRangeSummary(route, dates.length, best, config.search.maxPriceBRL);
+  await sendDateRangeSummary(route, dates.length, best, config.search.maxPriceBRL, config.search.tripType);
 }

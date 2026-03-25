@@ -31,6 +31,7 @@ const params = {
   origin: "BSB",
   destination: "GRU",
   departureDate: "2026-06-01",
+  tripType: "one-way" as const,
 };
 
 // Helper: cria um item de dataset válido com best_flights
@@ -163,5 +164,17 @@ describe("searchWithApify", () => {
 
     const { searchWithApify } = await import("../apis/apify");
     await expect(searchWithApify(params)).rejects.toThrow();
+  });
+
+  it("propaga tripType para os voos retornados", async () => {
+    mock.onPost(/acts\/test-actor\/runs/).reply(200, {
+      data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
+    });
+    mock.onGet(/datasets\/ds1\/items/).reply(200, makeDatasetItem([{ price: 700 }]));
+
+    const { searchWithApify } = await import("../apis/apify");
+    const flights = await searchWithApify({ ...params, tripType: "round-trip" });
+
+    expect(flights[0].tripType).toBe("round-trip");
   });
 });

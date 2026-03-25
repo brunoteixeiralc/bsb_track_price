@@ -22,6 +22,7 @@ const baseFlight: Flight = {
   origin: "BSB",
   destination: "GRU",
   departureDate: "2026-06-01",
+  tripType: "one-way",
   price: 250,
   currency: "BRL",
   priceBRL: 250,
@@ -71,6 +72,31 @@ describe("sendFlightAlert", () => {
     const { sendFlightAlert } = await import("../services/telegram");
     await expect(sendFlightAlert(baseFlight)).rejects.toThrow();
   });
+
+  it("exibe label 'Somente Ida' para voos one-way", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendFlightAlert } = await import("../services/telegram");
+    await sendFlightAlert({ ...baseFlight, tripType: "one-way" });
+
+    const requestBody = JSON.parse(mock.history.post[0].data);
+    expect(requestBody.text).toContain("Somente Ida");
+  });
+
+  it("exibe label 'Ida e Volta' para voos round-trip", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendFlightAlert } = await import("../services/telegram");
+    await sendFlightAlert({
+      ...baseFlight,
+      tripType: "round-trip",
+      returnDate: "2026-06-10",
+    });
+
+    const requestBody = JSON.parse(mock.history.post[0].data);
+    expect(requestBody.text).toContain("Ida e Volta");
+    expect(requestBody.text).toContain("10/06/2026");
+  });
 });
 
 describe("sendSummary", () => {
@@ -97,22 +123,24 @@ describe("sendSummary", () => {
 });
 
 describe("sendDateRangeSummary", () => {
+  const bestFlight: Flight = {
+    origin: "BSB",
+    destination: "GRU",
+    departureDate: "2026-06-05",
+    tripType: "one-way",
+    price: 200,
+    currency: "BRL",
+    priceBRL: 200,
+    link: "https://example.com",
+    source: "apify",
+    airline: "LATAM",
+  };
+
   it("envia mensagem com melhor voo quando abaixo do threshold", async () => {
     mock.onPost(/sendMessage/).reply(200, { ok: true });
 
     const { sendDateRangeSummary } = await import("../services/telegram");
-    const best: Flight = {
-      origin: "BSB",
-      destination: "GRU",
-      departureDate: "2026-06-05",
-      price: 200,
-      currency: "BRL",
-      priceBRL: 200,
-      link: "https://example.com",
-      source: "apify",
-      airline: "LATAM",
-    };
-    await sendDateRangeSummary("BSB→GRU", 3, best, 300);
+    await sendDateRangeSummary("BSB→GRU", 3, bestFlight, 300);
 
     const requestBody = JSON.parse(mock.history.post[0].data);
     expect(requestBody.text).toContain("BSB→GRU");
@@ -126,17 +154,8 @@ describe("sendDateRangeSummary", () => {
     mock.onPost(/sendMessage/).reply(200, { ok: true });
 
     const { sendDateRangeSummary } = await import("../services/telegram");
-    const best: Flight = {
-      origin: "BSB",
-      destination: "GRU",
-      departureDate: "2026-06-05",
-      price: 500,
-      currency: "BRL",
-      priceBRL: 500,
-      link: "https://example.com",
-      source: "apify",
-    };
-    await sendDateRangeSummary("BSB→GRU", 3, best, 300);
+    const above: Flight = { ...bestFlight, priceBRL: 500, price: 500 };
+    await sendDateRangeSummary("BSB→GRU", 3, above, 300);
 
     const requestBody = JSON.parse(mock.history.post[0].data);
     expect(requestBody.text).toContain("Nenhum voo");
@@ -150,5 +169,25 @@ describe("sendDateRangeSummary", () => {
 
     const requestBody = JSON.parse(mock.history.post[0].data);
     expect(requestBody.text).toContain("Nenhum voo");
+  });
+
+  it("exibe label 'Somente Ida' no resumo one-way", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendDateRangeSummary } = await import("../services/telegram");
+    await sendDateRangeSummary("BSB→GRU", 2, null, 300, "one-way");
+
+    const requestBody = JSON.parse(mock.history.post[0].data);
+    expect(requestBody.text).toContain("Somente Ida");
+  });
+
+  it("exibe label 'Ida e Volta' no resumo round-trip", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendDateRangeSummary } = await import("../services/telegram");
+    await sendDateRangeSummary("BSB→GRU", 2, null, 300, "round-trip");
+
+    const requestBody = JSON.parse(mock.history.post[0].data);
+    expect(requestBody.text).toContain("Ida e Volta");
   });
 });
