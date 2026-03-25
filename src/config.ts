@@ -26,7 +26,11 @@ export const config = {
   },
   search: {
     origin: process.env.ORIGIN ?? "BSB",
-    destination: required("DESTINATION"),
+    destinations: (() => {
+      const raw = process.env.DESTINATIONS ?? process.env.DESTINATION;
+      if (!raw) throw new Error("Missing required env var: DESTINATIONS");
+      return raw.split(",").map((s) => s.trim()).filter(Boolean);
+    })(),
     departureDate: required("DEPARTURE_DATE"),
     returnDate: process.env.RETURN_DATE,
     maxPriceBRL: Number(process.env.MAX_PRICE_BRL ?? "300"),

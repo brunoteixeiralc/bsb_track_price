@@ -81,7 +81,7 @@ describe("sendSummary", () => {
     await sendSummary(0, 10);
 
     const requestBody = JSON.parse(mock.history.post[0].data);
-    expect(requestBody.text).toContain("nenhuma passagem");
+    expect(requestBody.text).toContain("Nenhuma passagem");
     expect(requestBody.text).toContain("10");
   });
 

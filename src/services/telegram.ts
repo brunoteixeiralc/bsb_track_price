@@ -52,10 +52,11 @@ export async function sendFlightAlert(flight: Flight): Promise<void> {
   }
 }
 
-export async function sendSummary(found: number, checked: number): Promise<void> {
+export async function sendSummary(found: number, checked: number, route?: string): Promise<void> {
+  const prefix = route ? `${route} — ` : "";
   const text = found === 0
-    ? `🔍 Verificação concluída — nenhuma passagem abaixo do threshold encontrada (${checked} opções verificadas).`
-    : `✅ Verificação concluída — ${found} passagem(ns) encontrada(s) abaixo do threshold!`;
+    ? `🔍 ${prefix}Nenhuma passagem abaixo do threshold (${checked} opções verificadas).`
+    : `✅ ${prefix}${found} passagem(ns) encontrada(s) abaixo do threshold!`;
 
   try {
     await axios.post(`${BASE_URL}/sendMessage`, {

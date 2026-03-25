@@ -6,14 +6,20 @@ import { sendFlightAlert, sendSummary } from "./telegram";
 import { appendHistory } from "./history";
 
 export async function runTracker(): Promise<void> {
-  const params: SearchParams = {
-    origin: config.search.origin,
-    destination: config.search.destination,
-    departureDate: config.search.departureDate,
-    returnDate: config.search.returnDate,
-  };
+  for (const destination of config.search.destinations) {
+    const params: SearchParams = {
+      origin: config.search.origin,
+      destination,
+      departureDate: config.search.departureDate,
+      returnDate: config.search.returnDate,
+    };
+    await searchAndNotify(params);
+  }
+}
 
-  console.log(`[tracker] Buscando voos ${params.origin} → ${params.destination} em ${params.departureDate}`);
+async function searchAndNotify(params: SearchParams): Promise<void> {
+  const route = `${params.origin}→${params.destination}`;
+  console.log(`[tracker] Buscando voos ${route} em ${params.departureDate}`);
   console.log(`[tracker] Threshold: R$ ${config.search.maxPriceBRL}`);
 
   let flights: Flight[] = [];
@@ -64,5 +70,5 @@ export async function runTracker(): Promise<void> {
   }
 
   // Envia resumo da verificação
-  await sendSummary(cheapFlights.length, flights.length);
+  await sendSummary(cheapFlights.length, flights.length, route);
 }

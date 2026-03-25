@@ -35,7 +35,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           ORIGIN: ${{ secrets.ORIGIN }}
-          DESTINATION: ${{ secrets.DESTINATION }}
+          DESTINATIONS: ${{ secrets.DESTINATIONS }}
           DEPARTURE_DATE: ${{ secrets.DEPARTURE_DATE }}
           RETURN_DATE: ${{ secrets.RETURN_DATE }}
           MAX_PRICE_BRL: ${{ secrets.MAX_PRICE_BRL }}
