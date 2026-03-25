@@ -89,4 +89,23 @@ describe("convertToBRL", () => {
     const result = await convertToBRL(100, "USD");
     expect(result).toBe(500);
   });
+
+  it("converte moeda não-USD/BRL usando taxa direta da API", async () => {
+    const getMock = jest.fn().mockResolvedValue({ data: { rates: { BRL: 1.2 } } });
+    const { convertToBRL } = await loadCurrencyWith(getMock);
+
+    const result = await convertToBRL(100, "EUR");
+    expect(result).toBe(120);
+  });
+
+  it("usa fallback USD intermediário quando API de moeda não-USD falha", async () => {
+    const getMock = jest.fn()
+      .mockRejectedValueOnce(new Error("API error"))       // primeira chamada: taxa direta falha
+      .mockRejectedValueOnce(new Error("API error"))       // segunda chamada: taxa USD falha
+      .mockResolvedValueOnce({ data: { rates: { BRL: 5.0 } } }); // terceira: USD→BRL
+    const { convertToBRL } = await loadCurrencyWith(getMock);
+
+    const result = await convertToBRL(100, "EUR");
+    expect(result).toBeGreaterThan(0);
+  });
 });

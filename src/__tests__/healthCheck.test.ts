@@ -70,4 +70,14 @@ describe("maybeHealthCheck", () => {
 
     expect(mockSendHealthCheck).toHaveBeenCalledTimes(1);
   });
+
+  it("envia se o arquivo existe mas não tem campo lastCheck", async () => {
+    fs.mkdirSync(TMP_DIR, { recursive: true });
+    fs.writeFileSync(TMP_FILE, JSON.stringify({})); // sem lastCheck
+
+    const { maybeHealthCheck } = await import("../services/healthCheck");
+    await maybeHealthCheck();
+
+    expect(mockSendHealthCheck).toHaveBeenCalledTimes(1);
+  });
 });
