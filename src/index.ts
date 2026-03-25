@@ -1,4 +1,5 @@
 import { runTracker } from "./services/tracker";
+import { maybeHealthCheck } from "./services/healthCheck";
 
 async function main(): Promise<void> {
   console.log("=".repeat(50));
@@ -7,6 +8,7 @@ async function main(): Promise<void> {
 
   try {
     await runTracker();
+    await maybeHealthCheck();
     console.log("✅ Execução concluída com sucesso.");
     process.exit(0);
   } catch (err) {

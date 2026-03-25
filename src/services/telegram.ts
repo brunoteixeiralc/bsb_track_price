@@ -52,6 +52,21 @@ export async function sendFlightAlert(flight: Flight): Promise<void> {
   }
 }
 
+export async function sendHealthCheck(): Promise<void> {
+  const now = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const text = `💚 *Tracker ativo* — ${now}`;
+  try {
+    await axios.post(`${BASE_URL}/sendMessage`, {
+      chat_id: config.telegram.chatId,
+      text,
+      parse_mode: "Markdown",
+    });
+    console.log("[telegram] Health check enviado.");
+  } catch (err) {
+    console.error("[telegram] Erro ao enviar health check:", err);
+  }
+}
+
 export async function sendSummary(found: number, checked: number, route?: string): Promise<void> {
   const prefix = route ? `${route} — ` : "";
   const text = found === 0

@@ -38,6 +38,15 @@ jest.mock("../services/history", () => ({
   appendHistory: (...args: unknown[]) => mockAppendHistory(...args),
 }));
 
+// sleep no-op para não atrasar os testes de retry
+jest.mock("../utils/retry", () => {
+  const actual = jest.requireActual("../utils/retry");
+  return {
+    withRetry: (fn: () => Promise<unknown>, maxAttempts: number, delayMs: number, onRetry?: (a: number, e: unknown) => void) =>
+      actual.withRetry(fn, maxAttempts, delayMs, onRetry, async () => {}),
+  };
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockSendFlightAlert.mockResolvedValue(undefined);
@@ -146,5 +155,29 @@ describe("runTracker", () => {
     await runTracker();
 
     expect(mockSendSummary).toHaveBeenCalledWith(0, 0, "BSB→GRU");
+  });
+
+  it("retenta Apify até 3x antes de cair para RapidAPI", async () => {
+    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
+    mockSearchWithRapidAPI.mockResolvedValue([makeFlight(250)]);
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    expect(mockSearchWithApify).toHaveBeenCalledTimes(3);
+    expect(mockSearchWithRapidAPI).toHaveBeenCalledTimes(1);
+  });
+
+  it("não chama RapidAPI se Apify sucede na segunda tentativa", async () => {
+    mockSearchWithApify
+      .mockRejectedValueOnce(new Error("Apify falha 1"))
+      .mockResolvedValueOnce([makeFlight(200)]);
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    expect(mockSearchWithApify).toHaveBeenCalledTimes(2);
+    expect(mockSearchWithRapidAPI).not.toHaveBeenCalled();
+    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
   });
 });

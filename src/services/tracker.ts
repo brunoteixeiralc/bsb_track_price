@@ -4,6 +4,7 @@ import { searchWithApify } from "../apis/apify";
 import { searchWithRapidAPI } from "../apis/rapidapi";
 import { sendFlightAlert, sendSummary } from "./telegram";
 import { appendHistory } from "./history";
+import { withRetry } from "../utils/retry";
 
 export async function runTracker(): Promise<void> {
   for (const destination of config.search.destinations) {
@@ -24,12 +25,18 @@ async function searchAndNotify(params: SearchParams): Promise<void> {
 
   let flights: Flight[] = [];
 
-  // Tenta Apify primeiro, cai para RapidAPI se falhar
+  // Tenta Apify com retry, cai para RapidAPI se todas as tentativas falharem
   try {
-    flights = await searchWithApify(params);
+    flights = await withRetry(
+      () => searchWithApify(params),
+      3,
+      2000,
+      (attempt, err) =>
+        console.warn(`[tracker] Apify tentativa ${attempt}/3 falhou:`, (err as Error).message)
+    );
     console.log(`[tracker] Apify retornou ${flights.length} voo(s)`);
   } catch (apifyErr) {
-    console.warn("[tracker] Apify falhou, tentando RapidAPI...");
+    console.warn("[tracker] Apify falhou após 3 tentativas, tentando RapidAPI...");
     try {
       flights = await searchWithRapidAPI(params);
       console.log(`[tracker] RapidAPI retornou ${flights.length} voo(s)`);
