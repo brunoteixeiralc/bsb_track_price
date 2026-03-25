@@ -1,94 +1,109 @@
 [
   {
-    "timestamp": "2026-03-25T00:11:00.088Z",
+    "timestamp": "2026-03-25T00:13:06.697Z",
     "origin": "BSB",
     "destination": "GRU",
-    "departureDate": "2026-06-01",
-    "totalFound": 3,
-    "cheapestPriceBRL": 200,
+    "departureDate": "2026-03-29",
+    "returnDate": "",
+    "totalFound": 14,
+    "cheapestPriceBRL": 1723,
     "flights": [
       {
-        "priceBRL": 200,
-        "departureTime": "2026-06-01",
-        "link": "https://example.com",
+        "airline": "Gol",
+        "priceBRL": 1723,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-03-29",
         "source": "apify"
       },
       {
-        "priceBRL": 350,
-        "departureTime": "2026-06-01",
-        "link": "https://example.com",
+        "airline": "Gol",
+        "priceBRL": 1723,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-03-29",
         "source": "apify"
       },
       {
-        "priceBRL": 280,
-        "departureTime": "2026-06-01",
-        "link": "https://example.com",
-        "source": "apify"
-      }
-    ]
-  },
-  {
-    "timestamp": "2026-03-25T00:11:00.090Z",
-    "origin": "BSB",
-    "destination": "GRU",
-    "departureDate": "2026-06-01",
-    "totalFound": 3,
-    "cheapestPriceBRL": 150,
-    "flights": [
-      {
-        "priceBRL": 280,
-        "departureTime": "2026-06-01",
-        "link": "https://example.com",
+        "airline": "LATAM",
+        "priceBRL": 1902,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-03-29",
         "source": "apify"
       },
       {
-        "priceBRL": 150,
-        "departureTime": "2026-06-01",
-        "link": "https://example.com",
+        "airline": "Gol",
+        "priceBRL": 1723,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-03-29",
         "source": "apify"
       },
       {
-        "priceBRL": 200,
-        "departureTime": "2026-06-01",
-        "link": "https://example.com",
-        "source": "apify"
-      }
-    ]
-  },
-  {
-    "timestamp": "2026-03-25T00:11:00.094Z",
-    "origin": "BSB",
-    "destination": "GRU",
-    "departureDate": "2026-06-01",
-    "totalFound": 2,
-    "cheapestPriceBRL": 400,
-    "flights": [
-      {
-        "priceBRL": 400,
-        "departureTime": "2026-06-01",
-        "link": "https://example.com",
+        "airline": "Gol",
+        "priceBRL": 1723,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-03-29",
         "source": "apify"
       },
       {
-        "priceBRL": 500,
-        "departureTime": "2026-06-01",
-        "link": "https://example.com",
+        "airline": "Azul",
+        "priceBRL": 1737,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+CNF+on+2026-03-29",
         "source": "apify"
-      }
-    ]
-  },
-  {
-    "timestamp": "2026-03-25T00:11:00.095Z",
-    "origin": "BSB",
-    "destination": "GRU",
-    "departureDate": "2026-06-01",
-    "totalFound": 1,
-    "cheapestPriceBRL": 250,
-    "flights": [
+      },
       {
-        "priceBRL": 250,
-        "departureTime": "2026-06-01",
-        "link": "https://example.com",
+        "airline": "Azul",
+        "priceBRL": 1737,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+CNF+on+2026-03-29",
+        "source": "apify"
+      },
+      {
+        "airline": "Azul",
+        "priceBRL": 1827,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+CNF+on+2026-03-29",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 1902,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-03-29",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 1902,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-03-29",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 1902,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-03-29",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 1902,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-03-29",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 1902,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-03-29",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2360,
+        "departureTime": "2026-03-29",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-03-29",
         "source": "apify"
       }
     ]
