@@ -44,12 +44,12 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
         arrival_id: params.destination,
         outbound_date: params.departureDate,
         ...(params.returnDate ? { return_date: params.returnDate } : {}),
-        currency: "BRL",
+        currency: "USD",
         adults: 1,
         children: 0,
         infants: 0,
         hl: "en",
-        gl: "us",
+        gl: "br",
         exclude_basic: false,
         max_pages: 1,
       },
@@ -96,8 +96,8 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
         const origin = leg?.departure_airport?.id ?? params.origin;
         const destination = leg?.arrival_airport?.id ?? params.destination;
 
-        // Preço já vem em BRL (currency=BRL solicitado)
-        const priceBRL = await convertToBRL(option.price, "BRL");
+        // Preço vem em USD (currency=USD) → converte para BRL
+        const priceBRL = await convertToBRL(option.price, "USD");
 
         // Link de busca no Google Flights
         const link = `https://www.google.com/travel/flights?q=flights+from+${origin}+to+${destination}+on+${departureDate}`;
@@ -109,7 +109,7 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
           returnDate: params.returnDate,
           tripType: params.tripType,
           price: option.price,
-          currency: "BRL",
+          currency: "USD",
           priceBRL,
           airline,
           link,

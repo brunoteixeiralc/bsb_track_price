@@ -68,7 +68,7 @@ describe("searchWithApify", () => {
     expect(flights[0].source).toBe("apify");
     expect(flights[0].airline).toBe("Gol");
     expect(flights[0].priceBRL).toBe(500);
-    expect(flights[0].currency).toBe("BRL");
+    expect(flights[0].currency).toBe("USD");
   });
 
   it("constrói link do Google Flights com origem, destino e data", async () => {
