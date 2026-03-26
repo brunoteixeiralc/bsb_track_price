@@ -34,7 +34,7 @@ const params = {
   tripType: "one-way" as const,
 };
 
-// Helper: cria um item de dataset válido com best_flights
+// Helper: cria um dataset de resposta direta do run-sync-get-dataset-items
 function makeDatasetItem(options: { price: number; airline?: string }[]) {
   return [
     {
@@ -55,11 +55,8 @@ function makeDatasetItem(options: { price: number; airline?: string }[]) {
 }
 
 describe("searchWithApify", () => {
-  it("retorna voos mapeados quando o actor finaliza com sucesso", async () => {
-    mock.onPost(/acts\/test-actor\/runs/).reply(200, {
-      data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
-    });
-    mock.onGet(/datasets\/ds1\/items/).reply(200, makeDatasetItem([{ price: 1500, airline: "Gol" }]));
+  it("retorna voos mapeados usando run-sync-get-dataset-items", async () => {
+    mock.onPost(/run-sync-get-dataset-items/).reply(200, makeDatasetItem([{ price: 1500, airline: "Gol" }]));
 
     const { searchWithApify } = await import("../apis/apify");
     const flights = await searchWithApify(params);
@@ -72,10 +69,7 @@ describe("searchWithApify", () => {
   });
 
   it("constrói link do Google Flights com origem, destino e data", async () => {
-    mock.onPost(/acts\/test-actor\/runs/).reply(200, {
-      data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
-    });
-    mock.onGet(/datasets\/ds1\/items/).reply(200, makeDatasetItem([{ price: 1200 }]));
+    mock.onPost(/run-sync-get-dataset-items/).reply(200, makeDatasetItem([{ price: 1200 }]));
 
     const { searchWithApify } = await import("../apis/apify");
     const flights = await searchWithApify(params);
@@ -86,10 +80,7 @@ describe("searchWithApify", () => {
   });
 
   it("mapeia voos de other_flights também", async () => {
-    mock.onPost(/acts\/test-actor\/runs/).reply(200, {
-      data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
-    });
-    mock.onGet(/datasets\/ds1\/items/).reply(200, [
+    mock.onPost(/run-sync-get-dataset-items/).reply(200, [
       {
         best_flights: [{ price: 1000, flights: [{ departure_airport: { id: "BSB", time: "2026-06-01 08:00" }, arrival_airport: { id: "GRU" }, airline: "LATAM" }] }],
         other_flights: [{ price: 1200, flights: [{ departure_airport: { id: "BSB", time: "2026-06-01 14:00" }, arrival_airport: { id: "GRU" }, airline: "Azul" }] }],
@@ -103,10 +94,7 @@ describe("searchWithApify", () => {
   });
 
   it("ignora opções sem preço", async () => {
-    mock.onPost(/acts\/test-actor\/runs/).reply(200, {
-      data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
-    });
-    mock.onGet(/datasets\/ds1\/items/).reply(200, [
+    mock.onPost(/run-sync-get-dataset-items/).reply(200, [
       {
         best_flights: [{ flights: [{ departure_airport: { id: "BSB" }, arrival_airport: { id: "GRU" }, airline: "Gol" }] }],
         other_flights: [],
@@ -119,20 +107,8 @@ describe("searchWithApify", () => {
     expect(flights).toHaveLength(0);
   });
 
-  it("lança erro quando o actor falha", async () => {
-    mock.onPost(/acts\/test-actor\/runs/).reply(200, {
-      data: { id: "run1", status: "FAILED", defaultDatasetId: "ds1" },
-    });
-
-    const { searchWithApify } = await import("../apis/apify");
-    await expect(searchWithApify(params)).rejects.toThrow("FAILED");
-  });
-
   it("retorna array vazio quando o dataset está vazio", async () => {
-    mock.onPost(/acts\/test-actor\/runs/).reply(200, {
-      data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
-    });
-    mock.onGet(/datasets\/ds1\/items/).reply(200, []);
+    mock.onPost(/run-sync-get-dataset-items/).reply(200, []);
 
     const { searchWithApify } = await import("../apis/apify");
     const flights = await searchWithApify(params);
@@ -141,10 +117,7 @@ describe("searchWithApify", () => {
   });
 
   it("usa parâmetros de busca como fallback para campos ausentes no leg", async () => {
-    mock.onPost(/acts\/test-actor\/runs/).reply(200, {
-      data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
-    });
-    mock.onGet(/datasets\/ds1\/items/).reply(200, [
+    mock.onPost(/run-sync-get-dataset-items/).reply(200, [
       {
         best_flights: [{ price: 800, flights: [{}] }],
         other_flights: [],
@@ -160,21 +133,30 @@ describe("searchWithApify", () => {
   });
 
   it("lança erro quando a requisição HTTP falha", async () => {
-    mock.onPost(/acts\/test-actor\/runs/).networkError();
+    mock.onPost(/run-sync-get-dataset-items/).networkError();
 
     const { searchWithApify } = await import("../apis/apify");
     await expect(searchWithApify(params)).rejects.toThrow();
   });
 
   it("propaga tripType para os voos retornados", async () => {
-    mock.onPost(/acts\/test-actor\/runs/).reply(200, {
-      data: { id: "run1", status: "SUCCEEDED", defaultDatasetId: "ds1" },
-    });
-    mock.onGet(/datasets\/ds1\/items/).reply(200, makeDatasetItem([{ price: 700 }]));
+    mock.onPost(/run-sync-get-dataset-items/).reply(200, makeDatasetItem([{ price: 700 }]));
 
     const { searchWithApify } = await import("../apis/apify");
     const flights = await searchWithApify({ ...params, tripType: "round-trip" });
 
     expect(flights[0].tripType).toBe("round-trip");
+  });
+
+  it("envia return_date quando round-trip", async () => {
+    mock.onPost(/run-sync-get-dataset-items/).reply(200, makeDatasetItem([{ price: 900 }]));
+
+    const { searchWithApify } = await import("../apis/apify");
+    await searchWithApify({ ...params, tripType: "round-trip", returnDate: "2026-06-10" });
+
+    const body = JSON.parse(mock.history.post[0].data);
+    expect(body.return_date).toBe("2026-06-10");
+    expect(body.gl).toBe("br");
+    expect(body.currency).toBe("USD");
   });
 });

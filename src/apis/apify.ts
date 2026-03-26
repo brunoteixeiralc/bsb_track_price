@@ -5,14 +5,8 @@ import { convertToBRL } from "../services/currency";
 
 const APIFY_BASE = "https://api.apify.com/v2";
 
-// Actor: 1dYHRKkEBHBPd0JM7 (Google Flights scraper)
-// Schema: cada item do dataset contém best_flights e other_flights
-
-interface ApifyRunResult {
-  id: string;
-  status: string;
-  defaultDatasetId: string;
-}
+// Actor: johnvc~google-flights-data-scraper-flight-and-price-search
+// Endpoint run-sync-get-dataset-items: executa o actor e retorna os itens em uma única requisição
 
 interface ApifyFlightLeg {
   departure_airport?: { id?: string; time?: string };
@@ -36,9 +30,8 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
   console.log("[apify] Iniciando busca...");
 
   try {
-    // 1. Dispara o actor
-    const runResponse = await axios.post(
-      `${APIFY_BASE}/acts/${config.apify.actorId}/runs`,
+    const response = await axios.post(
+      `${APIFY_BASE}/acts/${config.apify.actorId}/run-sync-get-dataset-items`,
       {
         departure_id: params.origin,
         arrival_id: params.destination,
@@ -55,30 +48,13 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
       },
       {
         headers: { Authorization: `Bearer ${config.apify.token}` },
-        params: { waitForFinish: 120 }, // aguarda até 2 min
         timeout: 130_000,
       }
     );
 
-    const run: ApifyRunResult = runResponse.data.data;
-    console.log(`[apify] Run ${run.id} finalizado com status: ${run.status}`);
+    const items: ApifyDatasetItem[] = response.data;
 
-    if (run.status !== "SUCCEEDED") {
-      throw new Error(`Actor run failed with status: ${run.status}`);
-    }
-
-    // 2. Busca os resultados do dataset
-    const datasetResponse = await axios.get(
-      `${APIFY_BASE}/datasets/${run.defaultDatasetId}/items`,
-      {
-        headers: { Authorization: `Bearer ${config.apify.token}` },
-        params: { limit: 10 },
-      }
-    );
-
-    const items: ApifyDatasetItem[] = datasetResponse.data;
-
-    // 3. Extrai e mapeia voos de best_flights + other_flights
+    // Extrai e mapeia voos de best_flights + other_flights
     const flights: Flight[] = [];
 
     for (const item of items) {
@@ -96,7 +72,7 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
         const origin = leg?.departure_airport?.id ?? params.origin;
         const destination = leg?.arrival_airport?.id ?? params.destination;
 
-        // Preço vem em USD (currency=USD) → converte para BRL
+        // Preço vem em USD → converte para BRL
         const priceBRL = await convertToBRL(option.price, "USD");
 
         // Link de busca no Google Flights
