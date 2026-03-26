@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1774451196112" clover="3.2.0">
-  <project timestamp="1774451196112" name="All files">
-    <metrics statements="256" coveredstatements="248" conditionals="83" coveredconditionals="68" methods="34" coveredmethods="32" elements="373" coveredelements="348" complexity="0" loc="256" ncloc="256" packages="3" files="9" classes="9"/>
+<coverage generated="1774525447506" clover="3.2.0">
+  <project timestamp="1774525447506" name="All files">
+    <metrics statements="257" coveredstatements="249" conditionals="83" coveredconditionals="67" methods="34" coveredmethods="32" elements="374" coveredelements="348" complexity="0" loc="257" ncloc="257" packages="3" files="9" classes="9"/>
     <package name="apis">
       <metrics statements="59" coveredstatements="59" conditionals="33" coveredconditionals="26" methods="2" coveredmethods="2"/>
       <file name="apify.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/apis/apify.ts">
@@ -71,7 +71,7 @@
       </file>
     </package>
     <package name="services">
-      <metrics statements="179" coveredstatements="171" conditionals="48" coveredconditionals="40" methods="28" coveredmethods="26"/>
+      <metrics statements="180" coveredstatements="172" conditionals="48" coveredconditionals="39" methods="28" coveredmethods="26"/>
       <file name="currency.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/services/currency.ts">
         <metrics statements="32" coveredstatements="32" conditionals="9" coveredconditionals="6" methods="4" coveredmethods="4"/>
         <line num="1" count="10" type="stmt"/>
@@ -196,7 +196,7 @@
         <line num="129" count="0" type="stmt"/>
       </file>
       <file name="tracker.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/services/tracker.ts">
-        <metrics statements="68" coveredstatements="68" conditionals="17" coveredconditionals="14" methods="14" coveredmethods="13"/>
+        <metrics statements="69" coveredstatements="69" conditionals="17" coveredconditionals="13" methods="14" coveredmethods="13"/>
         <line num="1" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
         <line num="4" count="1" type="stmt"/>
@@ -260,11 +260,12 @@
         <line num="132" count="7" type="cond" truecount="0" falsecount="2"/>
         <line num="136" count="6" type="cond" truecount="1" falsecount="0"/>
         <line num="137" count="2" type="stmt"/>
-        <line num="141" count="6" type="cond" truecount="2" falsecount="0"/>
-        <line num="142" count="3" type="cond" truecount="2" falsecount="0"/>
-        <line num="145" count="6" type="cond" truecount="3" falsecount="0"/>
-        <line num="146" count="3" type="stmt"/>
-        <line num="149" count="6" type="stmt"/>
+        <line num="138" count="2" type="stmt"/>
+        <line num="142" count="4" type="cond" truecount="1" falsecount="1"/>
+        <line num="143" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="146" count="4" type="cond" truecount="3" falsecount="0"/>
+        <line num="147" count="3" type="stmt"/>
+        <line num="150" count="4" type="stmt"/>
       </file>
     </package>
     <package name="utils">

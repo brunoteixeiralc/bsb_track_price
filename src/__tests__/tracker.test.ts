@@ -262,7 +262,7 @@ describe("runTracker", () => {
     );
   });
 
-  it("com dateRangeDays>1 envia summary com best=null quando todas as datas falham", async () => {
+  it("com dateRangeDays>1 envia só o errorAlert (sem summary) quando todas as datas falham", async () => {
     mockConfig.search.dateRangeDays = 2;
     mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
     mockSearchWithRapidAPI.mockRejectedValue(new Error("RapidAPI down"));
@@ -271,7 +271,8 @@ describe("runTracker", () => {
     await runTracker();
 
     expect(mockSendFlightAlert).not.toHaveBeenCalled();
-    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, null, 300, "one-way");
+    expect(mockSendErrorAlert).toHaveBeenCalledWith("BSB→GRU", expect.stringContaining("2 data(s)"));
+    expect(mockSendDateRangeSummary).not.toHaveBeenCalled();
   });
 
   it("envia alerta de erro quando todas as datas do intervalo falham", async () => {

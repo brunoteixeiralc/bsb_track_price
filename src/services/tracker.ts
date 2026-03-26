@@ -135,6 +135,7 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
 
   if (apiFailures === dates.length) {
     await sendErrorAlert(route, `${dates.length} data(s) verificada(s), todas falharam. Apify e RapidAPI indisponíveis.`);
+    return;
   }
 
   const best =
