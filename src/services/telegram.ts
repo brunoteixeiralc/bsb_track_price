@@ -4,6 +4,7 @@ import { Flight, TripType } from "../types";
 import { formatBRL } from "./currency";
 
 const BASE_URL = `https://api.telegram.org/bot${config.telegram.botToken}`;
+const TIMEOUT_MS = 10_000;
 
 function formatDate(dateStr: string): string {
   const [year, month, day] = dateStr.split("-");
@@ -47,7 +48,7 @@ export async function sendFlightAlert(flight: Flight): Promise<void> {
       text,
       parse_mode: "Markdown",
       disable_web_page_preview: false,
-    });
+    }, { timeout: TIMEOUT_MS });
     console.log(`[telegram] Alerta enviado: ${flight.origin}→${flight.destination} ${formatBRL(flight.priceBRL)}`);
   } catch (err) {
     console.error("[telegram] Erro ao enviar mensagem:", err);
@@ -68,7 +69,7 @@ export async function sendErrorAlert(route: string, details: string): Promise<vo
       chat_id: config.telegram.chatId,
       text,
       parse_mode: "Markdown",
-    });
+    }, { timeout: TIMEOUT_MS });
     console.log(`[telegram] Alerta de erro enviado para ${route}`);
   } catch (err) {
     console.error("[telegram] Erro ao enviar alerta de falha:", err);
@@ -83,7 +84,7 @@ export async function sendHealthCheck(): Promise<void> {
       chat_id: config.telegram.chatId,
       text,
       parse_mode: "Markdown",
-    });
+    }, { timeout: TIMEOUT_MS });
     console.log("[telegram] Health check enviado.");
   } catch (err) {
     console.error("[telegram] Erro ao enviar health check:", err);
@@ -108,7 +109,7 @@ export async function sendDateRangeSummary(
       chat_id: config.telegram.chatId,
       text,
       parse_mode: "Markdown",
-    });
+    }, { timeout: TIMEOUT_MS });
   } catch (err) {
     console.error("[telegram] Erro ao enviar resumo de intervalo:", err);
   }
@@ -124,7 +125,7 @@ export async function sendSummary(found: number, checked: number, route?: string
     await axios.post(`${BASE_URL}/sendMessage`, {
       chat_id: config.telegram.chatId,
       text,
-    });
+    }, { timeout: TIMEOUT_MS });
   } catch (err) {
     console.error("[telegram] Erro ao enviar resumo:", err);
   }
