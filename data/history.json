@@ -1798,5 +1798,256 @@
         "source": "apify"
       }
     ]
+  },
+  {
+    "timestamp": "2026-03-27T11:43:40.896Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-01",
+    "totalFound": 21,
+    "cheapestPriceBRL": 1678.83,
+    "flights": [
+      {
+        "airline": "Azul",
+        "priceBRL": 1678.83,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+CGH+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2416.26,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2468.56,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Azul",
+        "priceBRL": 1678.83,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+VCP+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Azul",
+        "priceBRL": 1678.83,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+VCP+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Azul",
+        "priceBRL": 1678.83,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+VCP+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Azul",
+        "priceBRL": 1678.83,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+CGH+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Azul",
+        "priceBRL": 1678.83,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+CGH+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Azul",
+        "priceBRL": 1888.03,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+CNF+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Azul",
+        "priceBRL": 1903.72,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+CNF+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2416.26,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2416.26,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2416.26,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2416.26,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2468.56,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2468.56,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2468.56,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2468.56,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 3326.28,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 3326.28,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 3823.13,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-27T11:43:46.658Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-01",
+    "totalFound": 12,
+    "cheapestPriceBRL": 1260.43,
+    "flights": [
+      {
+        "airline": "Azul",
+        "priceBRL": 1260.43,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+CNF+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 1903.72,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 1903.72,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 1903.72,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Azul",
+        "priceBRL": 1260.43,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+CNF+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 1903.72,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 1903.72,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 1903.72,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 1903.72,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 1903.72,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 1903.72,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 1903.72,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-01",
+        "source": "apify"
+      }
+    ]
   }
 ]
