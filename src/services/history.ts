@@ -9,6 +9,19 @@ export function loadHistory(): HistoryEntry[] {
   return JSON.parse(fs.readFileSync(HISTORY_FILE, "utf-8"));
 }
 
+export function getLastCheapestPrice(origin: string, destination: string, departureDate: string): number | null {
+  const history = loadHistory();
+  const relevant = history.filter(
+    (e) =>
+      e.origin === origin &&
+      e.destination === destination &&
+      e.departureDate === departureDate &&
+      e.cheapestPriceBRL !== null
+  );
+  if (relevant.length === 0) return null;
+  return relevant[relevant.length - 1].cheapestPriceBRL;
+}
+
 export function appendHistory(entry: HistoryEntry): void {
   const history = loadHistory();
   history.push(entry);

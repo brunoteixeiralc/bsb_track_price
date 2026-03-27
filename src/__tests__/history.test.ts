@@ -93,3 +93,42 @@ describe("appendHistory", () => {
     expect(loadHistory()[0].cheapestPriceBRL).toBeNull();
   });
 });
+
+describe("getLastCheapestPrice", () => {
+  it("retorna null quando não há histórico", () => {
+    const { getLastCheapestPrice } = require("../services/history");
+    expect(getLastCheapestPrice("BSB", "GRU", "2026-03-29")).toBeNull();
+  });
+
+  it("retorna o preço mais recente para a rota e data informadas", () => {
+    const { appendHistory, getLastCheapestPrice } = require("../services/history");
+    appendHistory(makeEntry({ cheapestPriceBRL: 1500, timestamp: "2026-03-24T08:00:00.000Z" }));
+    appendHistory(makeEntry({ cheapestPriceBRL: 1200, timestamp: "2026-03-24T20:00:00.000Z" }));
+
+    expect(getLastCheapestPrice("BSB", "GRU", "2026-03-29")).toBe(1200);
+  });
+
+  it("ignora entradas de outras rotas ou datas", () => {
+    const { appendHistory, getLastCheapestPrice } = require("../services/history");
+    appendHistory(makeEntry({ destination: "GIG", cheapestPriceBRL: 999 }));
+    appendHistory(makeEntry({ departureDate: "2026-04-01", cheapestPriceBRL: 888 }));
+
+    expect(getLastCheapestPrice("BSB", "GRU", "2026-03-29")).toBeNull();
+  });
+
+  it("ignora entradas com cheapestPriceBRL null", () => {
+    const { appendHistory, getLastCheapestPrice } = require("../services/history");
+    appendHistory(makeEntry({ cheapestPriceBRL: null, totalFound: 0, flights: [] }));
+
+    expect(getLastCheapestPrice("BSB", "GRU", "2026-03-29")).toBeNull();
+  });
+
+  it("retorna o preço da entrada mais recente mesmo quando há null intercalado", () => {
+    const { appendHistory, getLastCheapestPrice } = require("../services/history");
+    appendHistory(makeEntry({ cheapestPriceBRL: 1500, timestamp: "2026-03-24T06:00:00.000Z" }));
+    appendHistory(makeEntry({ cheapestPriceBRL: null, totalFound: 0, flights: [], timestamp: "2026-03-24T12:00:00.000Z" }));
+    appendHistory(makeEntry({ cheapestPriceBRL: 1100, timestamp: "2026-03-24T18:00:00.000Z" }));
+
+    expect(getLastCheapestPrice("BSB", "GRU", "2026-03-29")).toBe(1100);
+  });
+});
