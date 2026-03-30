@@ -4,12 +4,14 @@ import MockAdapter from "axios-mock-adapter";
 jest.mock("../config", () => ({
   config: {
     rapidapi: { key: "test-key", host: "sky-scrapper.p.rapidapi.com" },
-    apify: { token: "tok", actorId: "actor" },
+    apify: { tokens: ["tok"], actorId: "actor" },
     telegram: { botToken: "bot", chatId: "chat" },
     search: {
       origin: "BSB", destination: "GRU",
       departureDate: "2026-06-01", returnDate: undefined, maxPriceBRL: 300,
+      adults: 1, children: 0,
     },
+    filters: { maxStops: undefined, airlinesWhitelist: [], maxDurationHours: undefined },
   },
 }));
 

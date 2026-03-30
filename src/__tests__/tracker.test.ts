@@ -1,7 +1,7 @@
 import { Flight, TripType } from "../types";
 
 const mockConfig = {
-  apify: { token: "tok", actorId: "actor" },
+  apify: { tokens: ["tok"], actorId: "actor" },
   rapidapi: { key: "key", host: "host" },
   telegram: { botToken: "bot", chatId: "chat" },
   search: {
@@ -12,6 +12,8 @@ const mockConfig = {
     tripType: "one-way" as TripType,
     returnDate: undefined as string | undefined,
     maxPriceBRL: 300,
+    adults: 1,
+    children: 0,
   },
   filters: {
     airlinesWhitelist: [] as string[],
