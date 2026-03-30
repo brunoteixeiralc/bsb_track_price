@@ -13,6 +13,11 @@ const mockConfig = {
     returnDate: undefined as string | undefined,
     maxPriceBRL: 300,
   },
+  filters: {
+    airlinesWhitelist: [] as string[],
+    maxStops: undefined as number | undefined,
+    maxDurationHours: undefined as number | undefined,
+  },
 };
 
 jest.mock("../config", () => ({ config: mockConfig }));
@@ -69,6 +74,9 @@ beforeEach(() => {
   mockConfig.search.dateRangeDays = 1;
   mockConfig.search.tripType = "one-way";
   mockConfig.search.returnDate = undefined;
+  mockConfig.filters.airlinesWhitelist = [];
+  mockConfig.filters.maxStops = undefined;
+  mockConfig.filters.maxDurationHours = undefined;
 });
 
 function makeFlight(priceBRL: number, destination = "GRU", tripType: Flight["tripType"] = "one-way"): Flight {
