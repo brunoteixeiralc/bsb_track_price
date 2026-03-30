@@ -33,6 +33,8 @@ export const config = {
     })(),
     departureDate: required("DEPARTURE_DATE"),
     dateRangeDays: Number(process.env.DATE_RANGE_DAYS ?? "1"),
+    adults: Number(process.env.ADULTS ?? "1"),
+    children: Number(process.env.CHILDREN ?? "0"),
     tripType: (() => {
       const t = process.env.TRIP_TYPE ?? "one-way";
       if (t !== "one-way" && t !== "round-trip") {

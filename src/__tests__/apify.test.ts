@@ -12,12 +12,20 @@ jest.mock("../config", () => ({
       departureDate: "2026-06-01",
       returnDate: undefined,
       maxPriceBRL: 300,
+      adults: 1,
+      children: 0,
+    },
+    filters: {
+      maxStops: undefined,
+      airlinesWhitelist: [],
+      maxDurationHours: undefined,
     },
   },
 }));
 
 jest.mock("../services/currency", () => ({
   convertToBRL: jest.fn().mockResolvedValue(500),
+  getUSDtoBRL: jest.fn().mockResolvedValue(5.0),
 }));
 
 const mock = new MockAdapter(axios);
@@ -158,5 +166,34 @@ describe("searchWithApify", () => {
     expect(body.return_date).toBe("2026-06-10");
     expect(body.gl).toBe("br");
     expect(body.currency).toBe("USD");
+  });
+
+  it("passa hl=pt, adults, children e max_price convertido no body", async () => {
+    mock.onPost(/run-sync-get-dataset-items/).reply(200, []);
+
+    const { searchWithApify } = await import("../apis/apify");
+    await searchWithApify(params);
+
+    const body = JSON.parse(mock.history.post[0].data);
+    expect(body.hl).toBe("pt");
+    expect(body.adults).toBe(1);
+    expect(body.children).toBe(0);
+    expect(body.max_price).toBe(60); // 300 BRL / 5.0 = 60 USD
+    expect(body.max_stops).toBeUndefined();
+  });
+
+  it("passa max_stops quando definido no config", async () => {
+    mock.onPost(/run-sync-get-dataset-items/).reply(200, []);
+
+    const { config } = await import("../config");
+    (config.filters as any).maxStops = 0;
+
+    const { searchWithApify } = await import("../apis/apify");
+    await searchWithApify(params);
+
+    (config.filters as any).maxStops = undefined;
+
+    const body = JSON.parse(mock.history.post[0].data);
+    expect(body.max_stops).toBe(0);
   });
 });

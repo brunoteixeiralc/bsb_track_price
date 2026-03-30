@@ -3798,5 +3798,619 @@
         "source": "apify"
       }
     ]
+  },
+  {
+    "timestamp": "2026-03-30T14:27:51.536Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-03-30",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-03-30T14:27:57.510Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-03-31",
+    "totalFound": 1,
+    "cheapestPriceBRL": 2158.88,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 2158.88,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-03-31",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:28:06.352Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-01",
+    "totalFound": 1,
+    "cheapestPriceBRL": 2158.88,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 2158.88,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-01",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:28:13.226Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-02",
+    "totalFound": 1,
+    "cheapestPriceBRL": 2158.88,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 2158.88,
+        "departureTime": "2026-04-02",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-02",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:28:17.832Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-03",
+    "totalFound": 1,
+    "cheapestPriceBRL": 1823.52,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 1823.52,
+        "departureTime": "2026-04-03",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-03",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:28:27.461Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-04",
+    "totalFound": 2,
+    "cheapestPriceBRL": 1818.28,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 1818.28,
+        "departureTime": "2026-04-04",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-04",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 1818.28,
+        "departureTime": "2026-04-04",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-04",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:28:33.939Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-05",
+    "totalFound": 1,
+    "cheapestPriceBRL": 1818.28,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 1818.28,
+        "departureTime": "2026-04-05",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-05",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:28:43.698Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-06",
+    "totalFound": 1,
+    "cheapestPriceBRL": 1435.76,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 1435.76,
+        "departureTime": "2026-04-06",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-06",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:28:53.540Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-07",
+    "totalFound": 1,
+    "cheapestPriceBRL": 1435.76,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 1435.76,
+        "departureTime": "2026-04-07",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-07",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:28:58.805Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-08",
+    "totalFound": 1,
+    "cheapestPriceBRL": 1435.76,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 1435.76,
+        "departureTime": "2026-04-08",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-08",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:29:07.886Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-09",
+    "totalFound": 1,
+    "cheapestPriceBRL": 1503.88,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 1503.88,
+        "departureTime": "2026-04-09",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-09",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:29:15.062Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-10",
+    "totalFound": 1,
+    "cheapestPriceBRL": 2415.64,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 2415.64,
+        "departureTime": "2026-04-10",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-10",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:29:23.802Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-11",
+    "totalFound": 2,
+    "cheapestPriceBRL": 1137.08,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 1137.08,
+        "departureTime": "2026-04-11",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-11",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 1137.08,
+        "departureTime": "2026-04-11",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-11",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:29:31.465Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-12",
+    "totalFound": 1,
+    "cheapestPriceBRL": 1137.08,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 1137.08,
+        "departureTime": "2026-04-12",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-12",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:29:38.507Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-13",
+    "totalFound": 1,
+    "cheapestPriceBRL": 1902.12,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 1902.12,
+        "departureTime": "2026-04-13",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-13",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:31:01.852Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-03-30",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-03-30T14:31:04.383Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-03-31",
+    "totalFound": 1,
+    "cheapestPriceBRL": 2158.88,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 2158.88,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-03-31",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:31:09.533Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-01",
+    "totalFound": 1,
+    "cheapestPriceBRL": 2158.88,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 2158.88,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-01",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:31:13.053Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-02",
+    "totalFound": 1,
+    "cheapestPriceBRL": 2158.88,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 2158.88,
+        "departureTime": "2026-04-02",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-02",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:31:15.517Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-03",
+    "totalFound": 1,
+    "cheapestPriceBRL": 1823.52,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 1823.52,
+        "departureTime": "2026-04-03",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-03",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:32:07.205Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-03-30",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-03-30T14:32:09.730Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-03-31",
+    "totalFound": 1,
+    "cheapestPriceBRL": 2158.88,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 2158.88,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-03-31",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T14:32:12.418Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-01",
+    "totalFound": 1,
+    "cheapestPriceBRL": 2158.88,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 2158.88,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+AJU+on+2026-04-01",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T16:36:27.910Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-03-30",
+    "totalFound": 5,
+    "cheapestPriceBRL": 2075.04,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-03-30",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-30",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2279.4,
+        "departureTime": "2026-03-30",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-30",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-03-30",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-30",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-03-30",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-30",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2279.4,
+        "departureTime": "2026-03-30",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-30",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T16:36:33.556Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-03-31",
+    "totalFound": 13,
+    "cheapestPriceBRL": 2075.04,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-31",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-31",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-31",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2080.28,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-31",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-31",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-31",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-31",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2279.4,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-31",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2279.4,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-31",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2279.4,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-31",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2279.4,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-31",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2557.12,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-31",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2840.08,
+        "departureTime": "2026-03-31",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-03-31",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-30T16:36:39.186Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-01",
+    "totalFound": 11,
+    "cheapestPriceBRL": 2075.04,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 2075.04,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2557.12,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2557.12,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2557.12,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2557.12,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2557.12,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 2840.08,
+        "departureTime": "2026-04-01",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-01",
+        "source": "apify"
+      }
+    ]
   }
 ]

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { config } from "../config";
 import { Flight, SearchParams } from "../types";
-import { convertToBRL } from "../services/currency";
+import { convertToBRL, getUSDtoBRL } from "../services/currency";
 
 const APIFY_BASE = "https://api.apify.com/v2";
 
@@ -31,6 +31,9 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
   console.log("[apify] Iniciando busca...");
 
   try {
+    const usdToBRL = await getUSDtoBRL();
+    const maxPriceUSD = Math.round(config.search.maxPriceBRL / usdToBRL);
+
     const response = await axios.post(
       `${APIFY_BASE}/acts/${config.apify.actorId}/run-sync-get-dataset-items`,
       {
@@ -39,13 +42,17 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
         outbound_date: params.departureDate,
         ...(params.returnDate ? { return_date: params.returnDate } : {}),
         currency: "USD",
-        adults: 1,
-        children: 0,
+        adults: config.search.adults,
+        children: config.search.children,
         infants: 0,
-        hl: "en",
+        hl: "pt",
         gl: "br",
         exclude_basic: false,
         max_pages: 1,
+        max_price: maxPriceUSD,
+        ...(config.filters.maxStops !== undefined
+          ? { max_stops: config.filters.maxStops }
+          : {}),
       },
       {
         headers: { Authorization: `Bearer ${config.apify.token}` },
