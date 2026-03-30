@@ -9,10 +9,21 @@ function required(key: string): string {
 
 export const config = {
   apify: {
-    token: required("APIFY_API_TOKEN"),
-    // Actor ID do scraper de voos no Apify — ajuste conforme o actor que você usar
-    // Sugestão: "tri_angle/google-flights-scraper" ou similar
-    actorId: process.env.APIFY_ACTOR_ID ?? "tri_angle~google-flights-scraper",
+    // Suporte a até 5 tokens. Se um ficar sem créditos, o próximo é tentado automaticamente.
+    // Compatibilidade retroativa: APIFY_API_TOKEN (sem número) funciona como APIFY_API_TOKEN_1.
+    tokens: (() => {
+      const tokens: string[] = [];
+      for (let i = 1; i <= 5; i++) {
+        const val = process.env[`APIFY_API_TOKEN_${i}`]
+          ?? (i === 1 ? process.env.APIFY_API_TOKEN : undefined);
+        if (val) tokens.push(val.trim());
+      }
+      if (tokens.length === 0) {
+        throw new Error("Missing required env var: APIFY_API_TOKEN_1 (ou APIFY_API_TOKEN)");
+      }
+      return tokens;
+    })(),
+    actorId: process.env.APIFY_ACTOR_ID ?? "johnvc~google-flights-data-scraper-flight-and-price-search",
   },
   rapidapi: {
     key: required("RAPIDAPI_KEY"),

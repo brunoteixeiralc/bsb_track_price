@@ -3,7 +3,7 @@ import MockAdapter from "axios-mock-adapter";
 
 jest.mock("../config", () => ({
   config: {
-    apify: { token: "test-token", actorId: "test-actor" },
+    apify: { tokens: ["test-token"], actorId: "test-actor" },
     rapidapi: { key: "key", host: "host" },
     telegram: { botToken: "bot", chatId: "chat" },
     search: {
@@ -235,5 +235,83 @@ describe("searchWithApify", () => {
 
     const body = JSON.parse(mock.history.post[0].data);
     expect(body.airlines).toBe("LA"); // só LATAM foi mapeada
+  });
+
+  describe("rotação de tokens", () => {
+    it("usa o segundo token quando o primeiro retorna 402 (sem créditos)", async () => {
+      const { config } = await import("../config");
+      (config.apify as any).tokens = ["token-sem-credito", "token-valido"];
+
+      mock.onPost(/run-sync-get-dataset-items/)
+        .replyOnce(402, { error: "Insufficient credits" })
+        .onPost(/run-sync-get-dataset-items/)
+        .replyOnce(200, makeDatasetItem([{ price: 800 }]));
+
+      const { searchWithApify } = await import("../apis/apify");
+      const flights = await searchWithApify(params);
+
+      (config.apify as any).tokens = ["test-token"];
+
+      expect(mock.history.post).toHaveLength(2);
+      expect(mock.history.post[0].headers!["Authorization"]).toBe("Bearer token-sem-credito");
+      expect(mock.history.post[1].headers!["Authorization"]).toBe("Bearer token-valido");
+      expect(flights).toHaveLength(1);
+    });
+
+    it("tenta todos os tokens e lança erro quando todos ficam sem créditos", async () => {
+      const { config } = await import("../config");
+      (config.apify as any).tokens = ["token-1", "token-2", "token-3"];
+
+      mock.onPost(/run-sync-get-dataset-items/).reply(402, { error: "Insufficient credits" });
+
+      const { searchWithApify } = await import("../apis/apify");
+      await expect(searchWithApify(params)).rejects.toBeDefined();
+
+      (config.apify as any).tokens = ["test-token"];
+
+      expect(mock.history.post).toHaveLength(3); // tentou os 3 tokens
+    });
+
+    it("rotaciona quando o primeiro retorna 403 com mensagem de crédito", async () => {
+      const { config } = await import("../config");
+      (config.apify as any).tokens = ["token-sem-credito", "token-valido"];
+
+      mock.onPost(/run-sync-get-dataset-items/)
+        .replyOnce(403, { error: "insufficient credit balance" })
+        .onPost(/run-sync-get-dataset-items/)
+        .replyOnce(200, makeDatasetItem([{ price: 700 }]));
+
+      const { searchWithApify } = await import("../apis/apify");
+      const flights = await searchWithApify(params);
+
+      (config.apify as any).tokens = ["test-token"];
+
+      expect(mock.history.post).toHaveLength(2);
+      expect(flights).toHaveLength(1);
+    });
+
+    it("não rotaciona quando o erro não é de créditos (ex: 500)", async () => {
+      const { config } = await import("../config");
+      (config.apify as any).tokens = ["token-1", "token-2"];
+
+      mock.onPost(/run-sync-get-dataset-items/).replyOnce(500, { error: "Internal server error" });
+
+      const { searchWithApify } = await import("../apis/apify");
+      await expect(searchWithApify(params)).rejects.toBeDefined();
+
+      (config.apify as any).tokens = ["test-token"];
+
+      expect(mock.history.post).toHaveLength(1); // parou no primeiro erro
+    });
+
+    it("usa token único sem rotação quando só há um token", async () => {
+      mock.onPost(/run-sync-get-dataset-items/).reply(200, makeDatasetItem([{ price: 600 }]));
+
+      const { searchWithApify } = await import("../apis/apify");
+      const flights = await searchWithApify(params);
+
+      expect(mock.history.post).toHaveLength(1);
+      expect(flights).toHaveLength(1);
+    });
   });
 });
