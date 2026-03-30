@@ -4502,5 +4502,23 @@
     "totalFound": 0,
     "cheapestPriceBRL": null,
     "flights": []
+  },
+  {
+    "timestamp": "2026-03-30T23:34:28.683Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-01",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-03-30T23:34:34.836Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-01",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
   }
 ]
