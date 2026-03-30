@@ -196,4 +196,44 @@ describe("searchWithApify", () => {
     const body = JSON.parse(mock.history.post[0].data);
     expect(body.max_stops).toBe(0);
   });
+
+  it("converte AIRLINES_WHITELIST para códigos IATA e passa no body", async () => {
+    mock.onPost(/run-sync-get-dataset-items/).reply(200, []);
+
+    const { config } = await import("../config");
+    (config.filters as any).airlinesWhitelist = ["LATAM", "GOL", "Azul"];
+
+    const { searchWithApify } = await import("../apis/apify");
+    await searchWithApify(params);
+
+    (config.filters as any).airlinesWhitelist = [];
+
+    const body = JSON.parse(mock.history.post[0].data);
+    expect(body.airlines).toBe("LA,G3,AD");
+  });
+
+  it("não passa airlines quando whitelist está vazia", async () => {
+    mock.onPost(/run-sync-get-dataset-items/).reply(200, []);
+
+    const { searchWithApify } = await import("../apis/apify");
+    await searchWithApify(params);
+
+    const body = JSON.parse(mock.history.post[0].data);
+    expect(body.airlines).toBeUndefined();
+  });
+
+  it("ignora nomes de companhia sem mapeamento IATA", async () => {
+    mock.onPost(/run-sync-get-dataset-items/).reply(200, []);
+
+    const { config } = await import("../config");
+    (config.filters as any).airlinesWhitelist = ["LATAM", "Desconhecida"];
+
+    const { searchWithApify } = await import("../apis/apify");
+    await searchWithApify(params);
+
+    (config.filters as any).airlinesWhitelist = [];
+
+    const body = JSON.parse(mock.history.post[0].data);
+    expect(body.airlines).toBe("LA"); // só LATAM foi mapeada
+  });
 });

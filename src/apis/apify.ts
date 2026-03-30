@@ -8,6 +8,25 @@ const APIFY_BASE = "https://api.apify.com/v2";
 // Actor: johnvc~google-flights-data-scraper-flight-and-price-search
 // Endpoint run-sync-get-dataset-items: executa o actor e retorna os itens em uma única requisição
 
+// Mapeamento de nome de companhia → código IATA
+const AIRLINE_NAME_TO_IATA: Record<string, string> = {
+  latam: "LA",
+  gol: "G3",
+  azul: "AD",
+};
+
+/**
+ * Converte nomes de companhias aéreas para códigos IATA.
+ * Ex: ["LATAM", "GOL"] → "LA,G3"
+ * Nomes sem mapeamento são ignorados.
+ */
+function toIataCodes(names: string[]): string {
+  return names
+    .map((n) => AIRLINE_NAME_TO_IATA[n.toLowerCase()])
+    .filter(Boolean)
+    .join(",");
+}
+
 interface ApifyFlightLeg {
   departure_airport?: { id?: string; time?: string };
   arrival_airport?: { id?: string; time?: string };
@@ -52,6 +71,9 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
         max_price: maxPriceUSD,
         ...(config.filters.maxStops !== undefined
           ? { max_stops: config.filters.maxStops }
+          : {}),
+        ...(config.filters.airlinesWhitelist.length > 0
+          ? { airlines: toIataCodes(config.filters.airlinesWhitelist) }
           : {}),
       },
       {
