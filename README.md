@@ -11,6 +11,8 @@ Monitora passagens aéreas saindo de Brasília (BSB) e envia alertas no Telegram
 - 💾 **Histórico de preços** — salva cada busca em `data/history.json` (commitado automaticamente)
 - 📊 **Relatório Semanal** — resumo automático dos melhores preços da semana enviado aos domingos
 - 🤖 **Bot Interativo (Webhook)** — comandos para busca em tempo real e consulta de histórico
+- 🛡️ **Anti-spam inteligente** — só envia alerta se o preço cair ≥ 5% em relação à última busca
+- ⚙️ **Filtros Avançados** — filtre por companhias aéreas, máximo de escalas e duração do voo
 - 💚 **Health check diário** — envia uma mensagem no Telegram confirmando que o tracker rodou
 - 🧪 **Testes com cobertura** — CI bloqueia PRs com cobertura abaixo de 80%
 
@@ -83,6 +85,9 @@ npm test -- --coverage  # testes + relatório de cobertura
 | `DATE_RANGE_DAYS` | `1` | Quantos dias varrer a partir de `DEPARTURE_DATE` |
 | `MAX_PRICE_BRL` | `300` | Threshold máximo em reais |
 | `WEBHOOK_PORT` | `3000` | Porta para o servidor de webhook do bot |
+| `AIRLINES_WHITELIST` | — | Lista de companhias (ex: `LATAM,GOL`) |
+| `MAX_STOPS` | — | Máximo de escalas (0 = direto) |
+| `MAX_DURATION_HOURS`| — | Duração máxima do voo em horas |
 | `APIFY_ACTOR_ID` | `tri_angle~google-flights-scraper` | Actor ID do Apify |
 | `RAPIDAPI_HOST` | `sky-scrapper.p.rapidapi.com` | Host da RapidAPI |
 
@@ -262,6 +267,20 @@ O projeto agora conta com um servidor de webhook para responder a comandos diret
    ```bash
    npm run webhook
    ```
+
+---
+
+## Filtros Avançados
+
+Você pode refinar sua busca utilizando variáveis de ambiente para evitar alertas de voos indesejados.
+
+- **Companhias Específicas**: Use `AIRLINES_WHITELIST=LATAM,GOL` para receber alertas apenas dessas empresas.
+- **Voos Diretos**: Configure `MAX_STOPS=0` para ignorar voos com escalas.
+- **Duração do Voo**: Use `MAX_DURATION_HOURS=5` para filtrar voos muito longos.
+
+### Anti-Spam Inteligente
+
+Para evitar notificações repetitivas de pequenas variações de preço, o tracker agora implementa uma lógica de **drop de 5%**. Um novo alerta só é disparado para uma mesma rota e data se o preço atual for pelo menos **5% menor** que o menor preço encontrado na busca anterior.
 
 ---
 
