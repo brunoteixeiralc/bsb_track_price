@@ -1,0 +1,343 @@
+# ✈️ BSB Price Track
+
+Monitors airfare departing from Brasília (BSB) and sends Telegram alerts when prices are below the configured threshold. Runs automatically via GitHub Actions twice a day.
+
+## Features
+
+- 🔍 **Multiple Destinations** — Search BSB→GRU, BSB→SDL, BSB→FOR all at once.
+- 🗓️ **Date Range** — Scans N days from the departure date and alerts the cheapest date found.
+- ✈️ **One-way or Round-trip** — Configurable via environment variables.
+- 👥 **Passenger Configuration** — Support for multiple adults and children.
+- 🔄 **Retry with Backoff & Token Rotation** — Retries Apify up to 3 times and rotates between up to 5 tokens if credits run out.
+- 💾 **Price History** — Saves every search in `data/history.json` (automatically committed).
+- 📊 **Weekly Report** — Automatic summary of the best prices of the week sent on Sundays.
+- 🤖 **Interactive Bot (Webhook)** — Commands for real-time search and history consultation.
+- 🛡️ **Smart Anti-spam** — Only sends an alert if the price drops ≥ 5% compared to the last search.
+- ⚙️ **Advanced Filters** — Filter by airlines, maximum stops, and flight duration.
+- 💵 **Dynamic Conversion** — Converts prices from USD/other currencies to BRL in real-time via API.
+- 💚 **Daily Health Check** — Sends a Telegram message confirming the tracker ran successfully.
+- 🧪 **Tests with Coverage** — CI blocks PRs with coverage below 80%.
+
+---
+
+## Stack
+
+- **Node.js + TypeScript** with `ts-node`
+- **APIs**: Apify (Primary) → RapidAPI/Skyscanner (Fallback)
+- **Notifications**: Telegram Bot
+- **Webhook Server**: Native HTTP server to process Telegram commands
+- **Currency**: ExchangeRate-API for real-time BRL conversion
+- **Tests**: Jest + `axios-mock-adapter`, coverage ≥ 80%
+- **CI/CD**: GitHub Actions — CI on every push/PR, tracker running 2x daily (08:00 and 20:00 BRT)
+
+---
+
+## Setup
+
+### 1. Clone and Install
+
+```bash
+git clone https://github.com/your-username/bsb-price-track.git
+cd bsb-price-track
+npm install
+```
+
+### 2. Configure `.env`
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your credentials (see table below).
+
+### 3. Run Locally
+
+```bash
+npm run dev
+```
+
+### 4. Run Tests
+
+```bash
+npm test              # Tests only
+npm test -- --coverage  # Tests + coverage report
+```
+
+---
+
+## Environment Variables
+
+### Mandatory
+
+| Variable | Description |
+|---|---|
+| `APIFY_API_TOKEN_1` | Primary Apify API Token |
+| `RAPIDAPI_KEY` | RapidAPI Key (fallback) |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token |
+| `TELEGRAM_CHAT_ID` | Telegram Chat/Group ID for alerts |
+| `DESTINATIONS` | Comma-separated destinations (e.g., `GRU,SDL,FOR`) |
+| `DEPARTURE_DATE` | Departure date in `YYYY-MM-DD` format |
+
+### Optional
+
+| Variable | Default | Description |
+|---|---|---|
+| `ORIGIN` | `BSB` | Origin IATA code |
+| `TRIP_TYPE` | `one-way` | Trip type: `one-way` or `round-trip` |
+| `RETURN_DATE` | — | Return date `YYYY-MM-DD` (**mandatory** if `TRIP_TYPE=round-trip`) |
+| `DATE_RANGE_DAYS` | `1` | Number of days to scan starting from `DEPARTURE_DATE` |
+| `ADULTS` | `1` | Number of adult passengers |
+| `CHILDREN` | `0` | Number of child passengers |
+| `MAX_PRICE_BRL` | `300` | Maximum price threshold in BRL |
+| `WEBHOOK_PORT` | `3000` | Port for the bot's webhook server |
+| `AIRLINES_WHITELIST` | — | Comma-separated airlines (e.g., `LATAM,GOL`) |
+| `MAX_STOPS` | — | Maximum number of stops (0 = direct) |
+| `MAX_DURATION_HOURS`| — | Maximum flight duration in hours |
+| `APIFY_API_TOKEN_2..5`| — | Additional tokens for rotation (optional) |
+| `APIFY_ACTOR_ID` | `johnvc~google-flights...` | Apify Actor ID |
+| `RAPIDAPI_HOST` | `sky-scrapper.p.rapidapi.com` | RapidAPI Host |
+
+### Example `.env`
+
+```env
+APIFY_API_TOKEN_1=apify_api_xxxxx
+RAPIDAPI_KEY=xxxxx
+TELEGRAM_BOT_TOKEN=123456:ABC-xxxxx
+TELEGRAM_CHAT_ID=-100xxxxxxxx
+
+ORIGIN=BSB
+DESTINATIONS=GRU,SDL,FOR
+DEPARTURE_DATE=2026-07-10
+TRIP_TYPE=round-trip
+RETURN_DATE=2026-07-20
+DATE_RANGE_DAYS=7
+MAX_PRICE_BRL=400
+```
+
+---
+
+## GitHub Actions
+
+### Required Secrets
+
+Go to **Settings → Secrets and variables → Actions** and add:
+
+| Secret | Mandatory |
+|---|---|
+| `APIFY_API_TOKEN_1` | ✅ |
+| `RAPIDAPI_KEY` | ✅ |
+| `TELEGRAM_BOT_TOKEN` | ✅ |
+| `TELEGRAM_CHAT_ID` | ✅ |
+| `DESTINATIONS` | ✅ |
+| `DEPARTURE_DATE` | ✅ |
+| `TRIP_TYPE` | Optional (`one-way` is default) |
+| `RETURN_DATE` | Mandatory if `TRIP_TYPE=round-trip` |
+| `DATE_RANGE_DAYS` | Optional |
+| `MAX_PRICE_BRL` | Optional |
+| `ORIGIN` | Optional |
+| `APIFY_ACTOR_ID` | Optional |
+| `RAPIDAPI_HOST` | Optional |
+
+### Workflows
+
+| Workflow | Trigger | Description |
+|---|---|---|
+| `ci.yml` | Push and Pull Request | Runs tests + coverage (blocks if < 80%) |
+| `check-flights.yml` | Cron 08:00/20:00 BRT + manual | Scans flights, sends alerts, commits history |
+
+---
+
+## Project Structure
+
+```
+bsb-price-track/
+├── src/
+│   ├── index.ts                  # Entry point
+│   ├── config.ts                 # Env var reading and validation
+│   ├── types.ts                  # TypeScript types (Flight, SearchParams, etc.)
+│   ├── apis/
+│   │   ├── apify.ts              # Apify integration (Google Flights scraper)
+│   │   └── rapidapi.ts           # RapidAPI/Skyscanner integration (fallback)
+│   ├── services/
+│   │   ├── tracker.ts            # Main logic: search, retry, alerts
+│   │   ├── telegram.ts           # Telegram message sending
+│   │   ├── currency.ts           # Currency conversion to BRL
+│   │   ├── history.ts            # history.json read/write
+│   │   ├── healthCheck.ts        # Daily health check on Telegram
+│   │   ├── webhook.ts            # Webhook server logic
+│   │   └── weeklyReport.ts       # Weekly report generation
+│   ├── utils/
+│   │   ├── retry.ts              # withRetry — generic exponential backoff
+│   │   └── dates.ts              # generateDateRange — date range generator
+│   └── __tests__/                # Unit tests (Jest)
+├── data/
+│   ├── history.json              # Search history (auto-committed by CI)
+│   └── health.json               # Daily health check control
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                # CI — tests on push/PR
+│       └── check-flights.yml     # Tracker — cron 2x daily
+├── .env.example
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+---
+
+## Telegram Messages
+
+### Cheap Flight Alert (one-way)
+
+```
+✈️ Cheap flight found!
+
+🛫 BSB → GRU
+🏷️ ✈️ One-way
+📅 Date: 2026-07-15
+🏢 LATAM
+💰 R$ 249,90
+
+🔗 View flight
+_Source: apify_
+```
+
+### Cheap Flight Alert (round-trip)
+
+```
+✈️ Cheap flight found!
+
+🛫 BSB → GRU
+🏷️ 🔄 Round-trip
+📅 Departure: 2026-07-15
+📅 Return: 2026-07-22
+🏢 GOL
+💰 R$ 589,00
+
+🔗 View flight
+_Source: rapidapi_
+```
+
+### Date Range Summary
+
+```
+🗓️ BSB→GRU (✈️ One-way) — 7 date(s) checked.
+💰 Best: R$ 249,90 on 2026-07-18 (LATAM)
+```
+
+### Daily Health Check
+
+```
+💚 Tracker active — 2026-03-25, 08:05:12
+```
+
+### Weekly Report
+
+Sent automatically on Sundays, comparing current prices with the previous week.
+
+```
+📊 Weekly Flight Report
+📅 2026-03-29, 09:00:00
+
+✈️ BSB → GRU
+💰 Lowest price this week: R$ 249,90
+📊 Previous week: R$ 270,00
+📉 Change: -7.4% (-R$ 20,10)
+
+✈️ BSB → FOR
+💰 Lowest price this week: R$ 450,00
+📊 Previous week: no data
+➡️ Trend: not enough data to compare
+
+_14 checks performed this week_
+```
+
+---
+
+---
+
+## Interactive Bot (Webhook)
+
+The project now includes a webhook server to respond to commands directly via Telegram.
+
+### Available Commands
+
+- `/buscar [DESTINATION]` — Performs a real-time search for the given destination (e.g., `/buscar GRU`).
+- `/historico [DESTINATION]` — Shows the last 5 searches for that destination, allowing price tracking over time.
+- `/status` — Displays current tracker status, including origin, monitored destinations, and price threshold.
+
+### How to Run the Bot
+
+1. Configure `WEBHOOK_PORT` in `.env` (default is 3000).
+2. Expose your local port (using `ngrok`, `cloudflare tunnel`, or server deployment).
+3. Configure the Webhook in Telegram:
+   `https://api.telegram.org/bot<TOKEN>/setWebhook?url=<YOUR_URL>`
+4. Start the server:
+   ```bash
+   npm run webhook
+   ```
+
+---
+
+## Advanced Filters
+
+You can refine your search using environment variables to avoid unwanted flight alerts.
+
+- **Specific Airlines**: Use `AIRLINES_WHITELIST=LATAM,GOL` to receive alerts only from these companies.
+- **Direct Flights**: Set `MAX_STOPS=0` to ignore flights with layovers.
+- **Flight Duration**: Use `MAX_DURATION_HOURS=5` to filter out long flights.
+
+### Smart Anti-Spam
+
+To avoid repetitive notifications of small price variations, the tracker now implements a **5% drop** logic. A new alert is only triggered for the same route and date if the current price is at least **5% lower** than the lowest price found in the previous search.
+
+---
+
+## Search Flow
+
+```
+For each destination in DESTINATIONS:
+  ├── Generate date range (DATE_RANGE_DAYS)
+  │
+  ├── If only 1 date:
+  │   └── Search → alert all flights below threshold → send summary
+  │
+  └── If multiple dates:
+      ├── For each date:
+      │   ├── Try Apify (up to 3x with retry)
+      │   ├── If it fails → try RapidAPI
+      │   └── Save result in data/history.json
+      ├── Find the date with the cheapest flight
+      ├── If below threshold → send alert
+      └── Send range summary
+```
+
+---
+
+## Development
+
+### Useful Commands
+
+```bash
+npm run dev          # Run the tracker once (ts-node)
+npm run webhook      # Start the interactive bot via webhook
+npm test             # Run all tests
+npm test -- --coverage  # Tests + coverage report
+npm run build        # Compile TypeScript to dist/
+npm run start:webhook # Run compiled bot (production)
+```
+
+### Adding a New Destination
+
+Simply add the IATA code to the `DESTINATIONS` variable (or GitHub secret):
+
+```env
+DESTINATIONS=GRU,SDL,FOR,CNF,VCP
+```
+
+### Adjusting Search Interval
+
+```env
+DEPARTURE_DATE=2026-07-10
+DATE_RANGE_DAYS=14   # scans from 07/10 to 07/23
+```

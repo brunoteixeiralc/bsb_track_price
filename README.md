@@ -7,12 +7,14 @@ Monitora passagens aéreas saindo de Brasília (BSB) e envia alertas no Telegram
 - 🔍 **Múltiplos destinos** — busca BSB→GRU, BSB→SDL, BSB→FOR de uma vez
 - 🗓️ **Intervalo de datas** — varre N dias a partir da data de saída e alerta a data mais barata
 - ✈️ **Somente ida ou ida e volta** — configurável por variável de ambiente
-- 🔄 **Retry com backoff** — tenta Apify até 3x antes de cair para o RapidAPI
+- 👥 **Configuração de passageiros** — suporte a múltiplos adultos e crianças
+- 🔄 **Retry com backoff & Rotação de Tokens** — tenta Apify até 3x e rotaciona entre até 5 tokens se os créditos acabarem
 - 💾 **Histórico de preços** — salva cada busca em `data/history.json` (commitado automaticamente)
 - 📊 **Relatório Semanal** — resumo automático dos melhores preços da semana enviado aos domingos
 - 🤖 **Bot Interativo (Webhook)** — comandos para busca em tempo real e consulta de histórico
 - 🛡️ **Anti-spam inteligente** — só envia alerta se o preço cair ≥ 5% em relação à última busca
 - ⚙️ **Filtros Avançados** — filtre por companhias aéreas, máximo de escalas e duração do voo
+- 💵 **Conversão Dinâmica** — converte preços de USD/outras moedas para BRL em tempo real via API
 - 💚 **Health check diário** — envia uma mensagem no Telegram confirmando que o tracker rodou
 - 🧪 **Testes com cobertura** — CI bloqueia PRs com cobertura abaixo de 80%
 
@@ -68,7 +70,7 @@ npm test -- --coverage  # testes + relatório de cobertura
 
 | Variável | Descrição |
 |---|---|
-| `APIFY_API_TOKEN` | Token da API do Apify |
+| `APIFY_API_TOKEN_1` | Token primário da API do Apify |
 | `RAPIDAPI_KEY` | Chave da RapidAPI (fallback) |
 | `TELEGRAM_BOT_TOKEN` | Token do bot no Telegram |
 | `TELEGRAM_CHAT_ID` | ID do chat/grupo para receber alertas |
@@ -83,12 +85,15 @@ npm test -- --coverage  # testes + relatório de cobertura
 | `TRIP_TYPE` | `one-way` | Tipo de viagem: `one-way` ou `round-trip` |
 | `RETURN_DATE` | — | Data de volta `YYYY-MM-DD` (**obrigatório** se `TRIP_TYPE=round-trip`) |
 | `DATE_RANGE_DAYS` | `1` | Quantos dias varrer a partir de `DEPARTURE_DATE` |
+| `ADULTS` | `1` | Número de passageiros adultos |
+| `CHILDREN` | `0` | Número de passageiros crianças |
 | `MAX_PRICE_BRL` | `300` | Threshold máximo em reais |
 | `WEBHOOK_PORT` | `3000` | Porta para o servidor de webhook do bot |
 | `AIRLINES_WHITELIST` | — | Lista de companhias (ex: `LATAM,GOL`) |
 | `MAX_STOPS` | — | Máximo de escalas (0 = direto) |
 | `MAX_DURATION_HOURS`| — | Duração máxima do voo em horas |
-| `APIFY_ACTOR_ID` | `tri_angle~google-flights-scraper` | Actor ID do Apify |
+| `APIFY_API_TOKEN_2..5`| — | Tokens adicionais para rotação (opcional) |
+| `APIFY_ACTOR_ID` | `johnvc~google-flights...` | Actor ID do Apify |
 | `RAPIDAPI_HOST` | `sky-scrapper.p.rapidapi.com` | Host da RapidAPI |
 
 ### Exemplo de `.env`
@@ -118,7 +123,7 @@ Vá em **Settings → Secrets and variables → Actions** e adicione:
 
 | Secret | Obrigatório |
 |---|---|
-| `APIFY_API_TOKEN` | ✅ |
+| `APIFY_API_TOKEN_1` | ✅ |
 | `RAPIDAPI_KEY` | ✅ |
 | `TELEGRAM_BOT_TOKEN` | ✅ |
 | `TELEGRAM_CHAT_ID` | ✅ |
