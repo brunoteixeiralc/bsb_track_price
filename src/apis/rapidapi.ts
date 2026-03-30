@@ -21,6 +21,8 @@ interface RapidFlightOption {
     destination?: { displayCode?: string };
     departure?: string;
     arrival?: string;
+    durationInMinutes?: number;
+    stopCount?: number;
     carriers?: { marketing?: Array<{ name?: string }> };
   }>;
   deeplink?: string;
@@ -83,6 +85,17 @@ export async function searchWithRapidAPI(params: SearchParams): Promise<Flight[]
       const airline = leg?.carriers?.marketing?.[0]?.name;
       const departureDate = leg?.departure?.split("T")[0] ?? params.departureDate;
 
+      // Escalas e duração — campos opcionais retornados pela sky-scrapper API
+      const stops = leg?.stopCount;
+      let durationMinutes: number | undefined = leg?.durationInMinutes;
+      if (durationMinutes === undefined && leg?.departure && leg?.arrival) {
+        const dep = new Date(leg.departure);
+        const arr = new Date(leg.arrival);
+        if (!isNaN(dep.getTime()) && !isNaN(arr.getTime())) {
+          durationMinutes = Math.round((arr.getTime() - dep.getTime()) / 60_000);
+        }
+      }
+
       const priceBRL = await convertToBRL(priceRaw, "BRL"); // sky-scrapper já retorna em BRL quando currency=BRL
 
       flights.push({
@@ -95,6 +108,8 @@ export async function searchWithRapidAPI(params: SearchParams): Promise<Flight[]
         currency: "BRL",
         priceBRL,
         airline,
+        stops,
+        durationMinutes,
         link: item.deeplink,
         source: "rapidapi",
       });

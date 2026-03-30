@@ -46,6 +46,56 @@ async function fetchFlights(params: SearchParams): Promise<Flight[]> {
   }
 }
 
+function applyAdvancedFilters(flights: Flight[]): Flight[] {
+  const { airlinesWhitelist, maxStops, maxDurationHours } = config.filters;
+  let filtered = flights;
+
+  if (airlinesWhitelist.length > 0) {
+    const before = filtered.length;
+    filtered = filtered.filter((f) => {
+      if (!f.airline) return false;
+      return airlinesWhitelist.some((a) =>
+        f.airline!.toUpperCase().includes(a.toUpperCase())
+      );
+    });
+    const removed = before - filtered.length;
+    if (removed > 0) {
+      console.log(
+        `[tracker] Filtro AIRLINES_WHITELIST (${airlinesWhitelist.join(",")}): removeu ${removed} voo(s), restaram ${filtered.length}`
+      );
+    }
+  }
+
+  if (maxStops !== undefined) {
+    const before = filtered.length;
+    filtered = filtered.filter(
+      (f) => f.stops !== undefined && f.stops <= maxStops
+    );
+    const removed = before - filtered.length;
+    if (removed > 0) {
+      console.log(
+        `[tracker] Filtro MAX_STOPS=${maxStops}: removeu ${removed} voo(s), restaram ${filtered.length}`
+      );
+    }
+  }
+
+  if (maxDurationHours !== undefined) {
+    const maxMinutes = maxDurationHours * 60;
+    const before = filtered.length;
+    filtered = filtered.filter(
+      (f) => f.durationMinutes !== undefined && f.durationMinutes <= maxMinutes
+    );
+    const removed = before - filtered.length;
+    if (removed > 0) {
+      console.log(
+        `[tracker] Filtro MAX_DURATION_HOURS=${maxDurationHours}: removeu ${removed} voo(s), restaram ${filtered.length}`
+      );
+    }
+  }
+
+  return filtered;
+}
+
 async function searchAndNotify(params: SearchParams): Promise<void> {
   const route = `${params.origin}→${params.destination}`;
   console.log(`[tracker] Buscando voos ${route} em ${params.departureDate}`);
@@ -60,6 +110,8 @@ async function searchAndNotify(params: SearchParams): Promise<void> {
     await sendErrorAlert(route, `Busca de ${params.departureDate} falhou. Apify e RapidAPI indisponíveis.`);
     throw new Error("Todas as fontes de dados falharam.");
   }
+
+  flights = applyAdvancedFilters(flights);
 
   // Captura o preço anterior ANTES de gravar no histórico (anti-spam)
   const previousCheapest = getLastCheapestPrice(params.origin, params.destination, params.departureDate);
@@ -133,6 +185,8 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
       console.warn(`[tracker] ${route} em ${date} falhou, pulando...`, (err as Error).message);
       continue;
     }
+
+    flights = applyAdvancedFilters(flights);
 
     appendHistory({
       timestamp: new Date().toISOString(),

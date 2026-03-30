@@ -12,6 +12,7 @@ interface ApifyFlightLeg {
   departure_airport?: { id?: string; time?: string };
   arrival_airport?: { id?: string; time?: string };
   airline?: string;
+  duration?: number; // duração do segmento em minutos (quando disponível)
 }
 
 interface ApifyFlightOption {
@@ -66,11 +67,33 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
       for (const option of allOptions) {
         if (!option.price) continue;
 
-        const leg = option.flights?.[0];
+        const legs = option.flights ?? [];
+        const leg = legs[0];
+        const lastLeg = legs[legs.length - 1];
         const departureDate = leg?.departure_airport?.time?.split(" ")[0] ?? params.departureDate;
         const airline = leg?.airline;
         const origin = leg?.departure_airport?.id ?? params.origin;
-        const destination = leg?.arrival_airport?.id ?? params.destination;
+        const destination = (lastLeg ?? leg)?.arrival_airport?.id ?? params.destination;
+
+        // Número de escalas = número de segmentos - 1
+        const stops = legs.length > 0 ? legs.length - 1 : undefined;
+
+        // Duração total: calcula pelo tempo de partida do primeiro seg. e chegada do último
+        let durationMinutes: number | undefined;
+        const depTime = leg?.departure_airport?.time;
+        const arrTime = lastLeg?.arrival_airport?.time;
+        if (depTime && arrTime) {
+          const dep = new Date(depTime.replace(" ", "T"));
+          const arr = new Date(arrTime.replace(" ", "T"));
+          if (!isNaN(dep.getTime()) && !isNaN(arr.getTime())) {
+            durationMinutes = Math.round((arr.getTime() - dep.getTime()) / 60_000);
+          }
+        }
+        // Fallback: soma das durações dos segmentos individuais
+        if (durationMinutes === undefined || durationMinutes <= 0) {
+          const total = legs.reduce((sum, l) => sum + (l.duration ?? 0), 0);
+          if (total > 0) durationMinutes = total;
+        }
 
         // Preço vem em USD → converte para BRL
         const priceBRL = await convertToBRL(option.price, "USD");
@@ -88,6 +111,8 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
           currency: "USD",
           priceBRL,
           airline,
+          stops,
+          durationMinutes,
           link,
           source: "apify",
         });

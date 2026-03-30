@@ -52,4 +52,20 @@ export const config = {
     })(),
     maxPriceBRL: Number(process.env.MAX_PRICE_BRL ?? "300"),
   },
+  filters: {
+    // Lista de companhias permitidas (ex: "LATAM,GOL"). Se vazio, aceita todas.
+    airlinesWhitelist: (() => {
+      const raw = process.env.AIRLINES_WHITELIST;
+      if (!raw) return [] as string[];
+      return raw.split(",").map((s) => s.trim()).filter(Boolean);
+    })(),
+    // Número máximo de escalas (0 = só voos diretos). Se não definido, aceita qualquer número.
+    maxStops: process.env.MAX_STOPS !== undefined && process.env.MAX_STOPS !== ""
+      ? Number(process.env.MAX_STOPS)
+      : undefined,
+    // Duração máxima do voo em horas. Se não definido, aceita qualquer duração.
+    maxDurationHours: process.env.MAX_DURATION_HOURS !== undefined && process.env.MAX_DURATION_HOURS !== ""
+      ? Number(process.env.MAX_DURATION_HOURS)
+      : undefined,
+  },
 };

@@ -10,6 +10,8 @@ export interface Flight {
   currency: string;     // ex: "USD", "BRL"
   priceBRL: number;     // preço convertido para BRL
   airline?: string;
+  stops?: number;        // número de escalas (0 = voo direto)
+  durationMinutes?: number; // duração total do voo em minutos
   link: string;
   source: "apify" | "rapidapi";
 }
