@@ -1,0 +1,1 @@
+[{"timestamp":"2026-03-24T10:00:00.000Z","origin":"BSB","destination":"GRU","departureDate":"2026-03-29","totalFound":2,"cheapestPriceBRL":1500,"flights":[{"airline":"Gol","priceBRL":1500,"departureTime":"2026-03-29 10:00","link":"https://example.com","source":"apify"}]}]

@@ -214,3 +214,101 @@ describe("sendErrorAlert", () => {
     await expect(sendErrorAlert("BSB→GRU", "falha")).resolves.not.toThrow();
   });
 });
+
+describe("sendWeeklyReport", () => {
+  const summaryDown = {
+    route: "BSB→GRU",
+    origin: "BSB",
+    destination: "GRU",
+    currentWeekMin: 1200,
+    previousWeekMin: 1500,
+    trend: "down" as const,
+    checksThisWeek: 3,
+  };
+
+  const summaryUp = {
+    route: "BSB→GIG",
+    origin: "BSB",
+    destination: "GIG",
+    currentWeekMin: 900,
+    previousWeekMin: 800,
+    trend: "up" as const,
+    checksThisWeek: 2,
+  };
+
+  const summaryUnknown = {
+    route: "BSB→CNF",
+    origin: "BSB",
+    destination: "CNF",
+    currentWeekMin: 700,
+    previousWeekMin: null,
+    trend: "unknown" as const,
+    checksThisWeek: 1,
+  };
+
+  it("envia relatório com rota, menor preço e comparativo da semana anterior", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendWeeklyReport } = await import("../services/telegram");
+    await sendWeeklyReport([summaryDown]);
+
+    const requestBody = JSON.parse(mock.history.post[0].data);
+    expect(requestBody.chat_id).toBe("123456");
+    expect(requestBody.parse_mode).toBe("Markdown");
+    expect(requestBody.text).toContain("BSB→GRU");
+    expect(requestBody.text).toContain("1.200");  // R$ 1.200,00 em pt-BR
+    expect(requestBody.text).toContain("1.500");
+    expect(requestBody.text).toContain("📉");
+    expect(requestBody.text).toContain("📊");
+    expect(requestBody.text).toContain("Relatório Semanal");
+  });
+
+  it("exibe emoji de alta quando trend é up", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendWeeklyReport } = await import("../services/telegram");
+    await sendWeeklyReport([summaryUp]);
+
+    const requestBody = JSON.parse(mock.history.post[0].data);
+    expect(requestBody.text).toContain("📈");
+  });
+
+  it("exibe mensagem de sem dados quando previousWeekMin é null", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendWeeklyReport } = await import("../services/telegram");
+    await sendWeeklyReport([summaryUnknown]);
+
+    const requestBody = JSON.parse(mock.history.post[0].data);
+    expect(requestBody.text).toContain("sem dados");
+    expect(requestBody.text).toContain("❓");
+  });
+
+  it("envia mensagem especial quando não há rotas", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendWeeklyReport } = await import("../services/telegram");
+    await sendWeeklyReport([]);
+
+    const requestBody = JSON.parse(mock.history.post[0].data);
+    expect(requestBody.text).toContain("Nenhuma rota monitorada");
+  });
+
+  it("inclui total de verificações no rodapé", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendWeeklyReport } = await import("../services/telegram");
+    await sendWeeklyReport([summaryDown, summaryUp]);
+
+    const requestBody = JSON.parse(mock.history.post[0].data);
+    // summaryDown.checksThisWeek (3) + summaryUp.checksThisWeek (2) = 5
+    expect(requestBody.text).toContain("5");
+  });
+
+  it("lança erro quando a API do Telegram falha", async () => {
+    mock.onPost(/sendMessage/).networkError();
+
+    const { sendWeeklyReport } = await import("../services/telegram");
+    await expect(sendWeeklyReport([summaryDown])).rejects.toThrow();
+  });
+});

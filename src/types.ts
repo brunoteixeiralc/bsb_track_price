@@ -45,3 +45,13 @@ export interface CurrencyRate {
   rate: number;
   fetchedAt: Date;
 }
+
+export interface WeeklyRouteSummary {
+  route: string;
+  origin: string;
+  destination: string;
+  currentWeekMin: number | null;
+  previousWeekMin: number | null;
+  trend: "up" | "down" | "stable" | "unknown";
+  checksThisWeek: number;
+}

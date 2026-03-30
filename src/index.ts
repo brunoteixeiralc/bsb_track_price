@@ -1,5 +1,6 @@
 import { runTracker } from "./services/tracker";
 import { maybeHealthCheck } from "./services/healthCheck";
+import { runWeeklyReport, isSunday } from "./services/weeklyReport";
 
 async function main(): Promise<void> {
   console.log("=".repeat(50));
@@ -8,6 +9,12 @@ async function main(): Promise<void> {
 
   try {
     await runTracker();
+
+    if (isSunday()) {
+      console.log("[main] Domingo detectado — executando relatório semanal.");
+      await runWeeklyReport();
+    }
+
     await maybeHealthCheck();
     console.log("✅ Execução concluída com sucesso.");
     process.exit(0);

@@ -1,6 +1,6 @@
 import axios from "axios";
 import { config } from "../config";
-import { Flight, TripType } from "../types";
+import { Flight, TripType, WeeklyRouteSummary } from "../types";
 import { formatBRL } from "./currency";
 
 const BASE_URL = `https://api.telegram.org/bot${config.telegram.botToken}`;
@@ -128,5 +128,80 @@ export async function sendSummary(found: number, checked: number, route?: string
     }, { timeout: TIMEOUT_MS });
   } catch (err) {
     console.error("[telegram] Erro ao enviar resumo:", err);
+  }
+}
+
+export async function sendWeeklyReport(summaries: WeeklyRouteSummary[]): Promise<void> {
+  const now = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+
+  if (summaries.length === 0) {
+    const text = `📊 *Relatório Semanal* — ${now}\n\nNenhuma rota monitorada nesta semana.`;
+    try {
+      await axios.post(`${BASE_URL}/sendMessage`, {
+        chat_id: config.telegram.chatId,
+        text,
+        parse_mode: "Markdown",
+      }, { timeout: TIMEOUT_MS });
+      console.log("[telegram] Relatório semanal enviado (sem rotas).");
+    } catch (err) {
+      console.error("[telegram] Erro ao enviar relatório semanal:", err);
+      throw err;
+    }
+    return;
+  }
+
+  const lines: string[] = [
+    `📊 *Relatório Semanal de Passagens*`,
+    `📅 ${now}`,
+    ``,
+  ];
+
+  for (const s of summaries) {
+    const trendEmoji =
+      s.trend === "up" ? "📈" :
+      s.trend === "down" ? "📉" :
+      s.trend === "stable" ? "➡️" : "❓";
+
+    lines.push(`✈️ *${s.route}*`);
+
+    if (s.currentWeekMin !== null) {
+      lines.push(`💰 Menor preço esta semana: *${formatBRL(s.currentWeekMin)}*`);
+    } else {
+      lines.push(`💰 Sem dados esta semana`);
+    }
+
+    if (s.previousWeekMin !== null) {
+      lines.push(`📊 Semana anterior: ${formatBRL(s.previousWeekMin)}`);
+    } else {
+      lines.push(`📊 Semana anterior: sem dados`);
+    }
+
+    if (s.currentWeekMin !== null && s.previousWeekMin !== null) {
+      const diff = s.currentWeekMin - s.previousWeekMin;
+      const pct = ((diff / s.previousWeekMin) * 100).toFixed(1);
+      const sign = diff > 0 ? "+" : "";
+      lines.push(`${trendEmoji} Variação: ${sign}${pct}% (${sign}${formatBRL(diff)})`);
+    } else {
+      lines.push(`${trendEmoji} Tendência: sem dados suficientes para comparar`);
+    }
+
+    lines.push(``);
+  }
+
+  const totalChecks = summaries.reduce((acc, s) => acc + s.checksThisWeek, 0);
+  lines.push(`_${totalChecks} verificação(ões) realizadas esta semana_`);
+
+  const text = lines.join("\n");
+
+  try {
+    await axios.post(`${BASE_URL}/sendMessage`, {
+      chat_id: config.telegram.chatId,
+      text,
+      parse_mode: "Markdown",
+    }, { timeout: TIMEOUT_MS });
+    console.log(`[telegram] Relatório semanal enviado com ${summaries.length} rota(s).`);
+  } catch (err) {
+    console.error("[telegram] Erro ao enviar relatório semanal:", err);
+    throw err;
   }
 }

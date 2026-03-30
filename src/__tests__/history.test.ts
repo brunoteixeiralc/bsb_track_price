@@ -132,3 +132,110 @@ describe("getLastCheapestPrice", () => {
     expect(getLastCheapestPrice("BSB", "GRU", "2026-03-29")).toBe(1100);
   });
 });
+
+describe("getWeeklySummary", () => {
+  // Reference "today" = 2026-03-29 (sunday)
+  const TODAY = new Date("2026-03-29T20:00:00.000Z");
+
+  // Current week: 2026-03-23 to 2026-03-29
+  const THIS_WEEK_TS = "2026-03-26T10:00:00.000Z";
+  // Previous week: 2026-03-16 to 2026-03-22
+  const PREV_WEEK_TS = "2026-03-19T10:00:00.000Z";
+  // Older than 2 weeks — should be ignored
+  const OLD_TS = "2026-03-01T10:00:00.000Z";
+
+  it("retorna array vazio quando não há histórico", () => {
+    const { getWeeklySummary } = require("../services/history");
+    expect(getWeeklySummary(TODAY)).toEqual([]);
+  });
+
+  it("retorna menor preço da semana atual por rota", () => {
+    const { appendHistory, getWeeklySummary } = require("../services/history");
+    appendHistory(makeEntry({ cheapestPriceBRL: 1500, timestamp: THIS_WEEK_TS }));
+    appendHistory(makeEntry({ cheapestPriceBRL: 1200, timestamp: THIS_WEEK_TS }));
+
+    const result = getWeeklySummary(TODAY);
+    expect(result).toHaveLength(1);
+    expect(result[0].route).toBe("BSB→GRU");
+    expect(result[0].currentWeekMin).toBe(1200);
+  });
+
+  it("retorna menor preço da semana anterior por rota", () => {
+    const { appendHistory, getWeeklySummary } = require("../services/history");
+    appendHistory(makeEntry({ cheapestPriceBRL: 2000, timestamp: PREV_WEEK_TS }));
+    appendHistory(makeEntry({ cheapestPriceBRL: 1800, timestamp: PREV_WEEK_TS }));
+
+    const result = getWeeklySummary(TODAY);
+    expect(result[0].previousWeekMin).toBe(1800);
+  });
+
+  it("detecta tendência de baixa quando preço caiu mais de 2%", () => {
+    const { appendHistory, getWeeklySummary } = require("../services/history");
+    appendHistory(makeEntry({ cheapestPriceBRL: 1500, timestamp: PREV_WEEK_TS }));
+    appendHistory(makeEntry({ cheapestPriceBRL: 1200, timestamp: THIS_WEEK_TS }));
+
+    const result = getWeeklySummary(TODAY);
+    expect(result[0].trend).toBe("down");
+  });
+
+  it("detecta tendência de alta quando preço subiu mais de 2%", () => {
+    const { appendHistory, getWeeklySummary } = require("../services/history");
+    appendHistory(makeEntry({ cheapestPriceBRL: 1000, timestamp: PREV_WEEK_TS }));
+    appendHistory(makeEntry({ cheapestPriceBRL: 1500, timestamp: THIS_WEEK_TS }));
+
+    const result = getWeeklySummary(TODAY);
+    expect(result[0].trend).toBe("up");
+  });
+
+  it("detecta tendência estável quando variação é menor que 2%", () => {
+    const { appendHistory, getWeeklySummary } = require("../services/history");
+    appendHistory(makeEntry({ cheapestPriceBRL: 1000, timestamp: PREV_WEEK_TS }));
+    appendHistory(makeEntry({ cheapestPriceBRL: 1010, timestamp: THIS_WEEK_TS }));
+
+    const result = getWeeklySummary(TODAY);
+    expect(result[0].trend).toBe("stable");
+  });
+
+  it("retorna trend 'unknown' quando há dados apenas de uma semana", () => {
+    const { appendHistory, getWeeklySummary } = require("../services/history");
+    appendHistory(makeEntry({ cheapestPriceBRL: 1200, timestamp: THIS_WEEK_TS }));
+
+    const result = getWeeklySummary(TODAY);
+    expect(result[0].trend).toBe("unknown");
+    expect(result[0].previousWeekMin).toBeNull();
+  });
+
+  it("ignora entradas com mais de 2 semanas", () => {
+    const { appendHistory, getWeeklySummary } = require("../services/history");
+    appendHistory(makeEntry({ cheapestPriceBRL: 500, timestamp: OLD_TS }));
+
+    const result = getWeeklySummary(TODAY);
+    // Route appears in the map but with no prices in either window
+    const gru = result.find((s: { route: string }) => s.route === "BSB→GRU");
+    if (gru) {
+      expect(gru.currentWeekMin).toBeNull();
+      expect(gru.previousWeekMin).toBeNull();
+    }
+  });
+
+  it("conta corretamente as verificações desta semana", () => {
+    const { appendHistory, getWeeklySummary } = require("../services/history");
+    appendHistory(makeEntry({ cheapestPriceBRL: 1200, timestamp: THIS_WEEK_TS }));
+    appendHistory(makeEntry({ cheapestPriceBRL: null, totalFound: 0, flights: [], timestamp: THIS_WEEK_TS }));
+    appendHistory(makeEntry({ cheapestPriceBRL: 1100, timestamp: THIS_WEEK_TS }));
+
+    const result = getWeeklySummary(TODAY);
+    expect(result[0].checksThisWeek).toBe(3);
+  });
+
+  it("agrupa rotas distintas separadamente", () => {
+    const { appendHistory, getWeeklySummary } = require("../services/history");
+    appendHistory(makeEntry({ destination: "GRU", cheapestPriceBRL: 1200, timestamp: THIS_WEEK_TS }));
+    appendHistory(makeEntry({ destination: "GIG", cheapestPriceBRL: 800, timestamp: THIS_WEEK_TS }));
+
+    const result = getWeeklySummary(TODAY);
+    expect(result).toHaveLength(2);
+    const routes = result.map((s: { route: string }) => s.route).sort();
+    expect(routes).toEqual(["BSB→GIG", "BSB→GRU"]);
+  });
+});
