@@ -9,6 +9,8 @@ Monitora passagens aéreas saindo de Brasília (BSB) e envia alertas no Telegram
 - ✈️ **Somente ida ou ida e volta** — configurável por variável de ambiente
 - 🔄 **Retry com backoff** — tenta Apify até 3x antes de cair para o RapidAPI
 - 💾 **Histórico de preços** — salva cada busca em `data/history.json` (commitado automaticamente)
+- 📊 **Relatório Semanal** — resumo automático dos melhores preços da semana enviado aos domingos
+- 🤖 **Bot Interativo (Webhook)** — comandos para busca em tempo real e consulta de histórico
 - 💚 **Health check diário** — envia uma mensagem no Telegram confirmando que o tracker rodou
 - 🧪 **Testes com cobertura** — CI bloqueia PRs com cobertura abaixo de 80%
 
@@ -19,6 +21,7 @@ Monitora passagens aéreas saindo de Brasília (BSB) e envia alertas no Telegram
 - **Node.js + TypeScript** com `ts-node`
 - **APIs**: Apify (primária) → RapidAPI/Skyscanner (fallback)
 - **Notificações**: Telegram Bot
+- **Webhook Server**: Servidor HTTP nativo para processar comandos do Telegram
 - **Testes**: Jest + `axios-mock-adapter`, cobertura ≥ 80%
 - **CI/CD**: GitHub Actions — CI em todo push/PR, tracker rodando 2x ao dia (08h e 20h BRT)
 
@@ -79,6 +82,7 @@ npm test -- --coverage  # testes + relatório de cobertura
 | `RETURN_DATE` | — | Data de volta `YYYY-MM-DD` (**obrigatório** se `TRIP_TYPE=round-trip`) |
 | `DATE_RANGE_DAYS` | `1` | Quantos dias varrer a partir de `DEPARTURE_DATE` |
 | `MAX_PRICE_BRL` | `300` | Threshold máximo em reais |
+| `WEBHOOK_PORT` | `3000` | Porta para o servidor de webhook do bot |
 | `APIFY_ACTOR_ID` | `tri_angle~google-flights-scraper` | Actor ID do Apify |
 | `RAPIDAPI_HOST` | `sky-scrapper.p.rapidapi.com` | Host da RapidAPI |
 
@@ -148,7 +152,9 @@ bsb-price-track/
 │   │   ├── telegram.ts           # Envio de mensagens no Telegram
 │   │   ├── currency.ts           # Conversão de moeda para BRL
 │   │   ├── history.ts            # Leitura/escrita de data/history.json
-│   │   └── healthCheck.ts        # Health check diário no Telegram
+│   │   ├── healthCheck.ts        # Health check diário no Telegram
+│   │   ├── webhook.ts            # Lógica do servidor de webhook
+│   │   └── weeklyReport.ts       # Geração de relatório semanal
 │   ├── utils/
 │   │   ├── retry.ts              # withRetry — backoff exponencial genérico
 │   │   └── dates.ts              # generateDateRange — gera intervalo de datas
@@ -213,6 +219,50 @@ _Fonte: rapidapi_
 💚 Tracker ativo — 25/03/2026, 08:05:12
 ```
 
+### Relatório Semanal
+
+Enviado automaticamente aos domingos, compara os preços atuais com os da semana anterior.
+
+```
+📊 Relatório Semanal de Passagens
+📅 29/03/2026, 09:00:00
+
+✈️ BSB → GRU
+💰 Menor preço esta semana: R$ 249,90
+📊 Semana anterior: R$ 270,00
+📉 Variação: -7.4% (-R$ 20,10)
+
+✈️ BSB → FOR
+💰 Menor preço esta semana: R$ 450,00
+📊 Semana anterior: sem dados
+➡️ Tendência: sem dados suficientes para comparar
+
+_14 verificação(ões) realizadas esta semana_
+```
+
+---
+
+## Bot Interativo (Webhook)
+
+O projeto agora conta com um servidor de webhook para responder a comandos diretamente no Telegram.
+
+### Comandos disponíveis
+
+- `/buscar [DESTINO]` — Realiza uma busca em tempo real para o destino informado (ex: `/buscar GRU`).
+- `/historico [DESTINO]` — Mostra as últimas 5 buscas realizadas para aquele destino, permitindo acompanhar a evolução do preço.
+- `/status` — Exibe o status atual do tracker, incluindo origem, destinos monitorados e threshold de preço.
+
+### Como rodar o Bot
+
+1. Configure a `WEBHOOK_PORT` no `.env` (padrão é 3000).
+2. Exponha sua porta local (use `ngrok`, `cloudflare tunnel` ou deploy em servidor).
+3. Configure o Webhook no Telegram:
+   `https://api.telegram.org/bot<TOKEN>/setWebhook?url=<SUA_URL>`
+4. Inicie o servidor:
+   ```bash
+   npm run webhook
+   ```
+
 ---
 
 ## Fluxo de Busca
@@ -242,9 +292,11 @@ Para cada destino em DESTINATIONS:
 
 ```bash
 npm run dev          # Executa o tracker uma vez (ts-node)
+npm run webhook      # Inicia o bot interativo via webhook
 npm test             # Roda todos os testes
 npm test -- --coverage  # Testes + relatório de cobertura
 npm run build        # Compila TypeScript para dist/
+npm run start:webhook # Inicia o bot compilado (production)
 ```
 
 ### Adicionando um novo destino
