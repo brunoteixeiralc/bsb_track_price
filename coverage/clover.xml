@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1774701900891" clover="3.2.0">
-  <project timestamp="1774701900891" name="All files">
-    <metrics statements="375" coveredstatements="328" conditionals="124" coveredconditionals="99" methods="51" coveredmethods="41" elements="550" coveredelements="468" complexity="0" loc="375" ncloc="375" packages="3" files="10" classes="10"/>
+<coverage generated="1774871179271" clover="3.2.0">
+  <project timestamp="1774871179271" name="All files">
+    <metrics statements="458" coveredstatements="441" conditionals="164" coveredconditionals="145" methods="57" coveredmethods="52" elements="679" coveredelements="638" complexity="0" loc="458" ncloc="458" packages="3" files="11" classes="11"/>
     <package name="apis">
       <metrics statements="54" coveredstatements="54" conditionals="32" coveredconditionals="26" methods="2" coveredmethods="2"/>
-      <file name="apify.ts" path="/sessions/relaxed-gallant-ride/mnt/bsb_price_track/src/apis/apify.ts">
+      <file name="apify.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/apis/apify.ts">
         <metrics statements="26" coveredstatements="26" conditionals="13" coveredconditionals="11" methods="1" coveredmethods="1"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
@@ -33,7 +33,7 @@
         <line num="100" count="1" type="stmt"/>
         <line num="101" count="1" type="stmt"/>
       </file>
-      <file name="rapidapi.ts" path="/sessions/relaxed-gallant-ride/mnt/bsb_price_track/src/apis/rapidapi.ts">
+      <file name="rapidapi.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/apis/rapidapi.ts">
         <metrics statements="28" coveredstatements="28" conditionals="19" coveredconditionals="15" methods="1" coveredmethods="1"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
@@ -66,8 +66,8 @@
       </file>
     </package>
     <package name="services">
-      <metrics statements="303" coveredstatements="256" conditionals="90" coveredconditionals="71" methods="45" coveredmethods="35"/>
-      <file name="currency.ts" path="/sessions/relaxed-gallant-ride/mnt/bsb_price_track/src/services/currency.ts">
+      <metrics statements="386" coveredstatements="369" conditionals="130" coveredconditionals="117" methods="51" coveredmethods="46"/>
+      <file name="currency.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/services/currency.ts">
         <metrics statements="32" coveredstatements="32" conditionals="9" coveredconditionals="6" methods="4" coveredmethods="4"/>
         <line num="1" count="11" type="stmt"/>
         <line num="5" count="11" type="stmt"/>
@@ -100,49 +100,87 @@
         <line num="55" count="1" type="stmt"/>
         <line num="56" count="1" type="stmt"/>
         <line num="60" count="11" type="stmt"/>
-        <line num="61" count="36" type="stmt"/>
+        <line num="61" count="52" type="stmt"/>
       </file>
-      <file name="healthCheck.ts" path="/sessions/relaxed-gallant-ride/mnt/bsb_price_track/src/services/healthCheck.ts">
-        <metrics statements="15" coveredstatements="0" conditionals="4" coveredconditionals="0" methods="1" coveredmethods="0"/>
-        <line num="1" count="0" type="stmt"/>
-        <line num="2" count="0" type="stmt"/>
-        <line num="3" count="0" type="stmt"/>
-        <line num="5" count="0" type="stmt"/>
-        <line num="7" count="0" type="stmt"/>
-        <line num="8" count="0" type="stmt"/>
-        <line num="10" count="0" type="stmt"/>
-        <line num="11" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="12" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="15" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="16" count="0" type="stmt"/>
-        <line num="17" count="0" type="stmt"/>
-        <line num="20" count="0" type="stmt"/>
-        <line num="21" count="0" type="stmt"/>
-        <line num="22" count="0" type="stmt"/>
+      <file name="healthCheck.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/services/healthCheck.ts">
+        <metrics statements="15" coveredstatements="15" conditionals="4" coveredconditionals="4" methods="1" coveredmethods="1"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="3" count="1" type="stmt"/>
+        <line num="5" count="1" type="stmt"/>
+        <line num="7" count="1" type="stmt"/>
+        <line num="8" count="5" type="stmt"/>
+        <line num="10" count="5" type="stmt"/>
+        <line num="11" count="5" type="cond" truecount="1" falsecount="0"/>
+        <line num="12" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="15" count="5" type="cond" truecount="1" falsecount="0"/>
+        <line num="16" count="1" type="stmt"/>
+        <line num="17" count="1" type="stmt"/>
+        <line num="20" count="4" type="stmt"/>
+        <line num="21" count="4" type="stmt"/>
+        <line num="22" count="4" type="stmt"/>
       </file>
-      <file name="history.ts" path="/sessions/relaxed-gallant-ride/mnt/bsb_price_track/src/services/history.ts">
-        <metrics statements="18" coveredstatements="0" conditionals="6" coveredconditionals="0" methods="4" coveredmethods="0"/>
-        <line num="1" count="0" type="stmt"/>
-        <line num="2" count="0" type="stmt"/>
-        <line num="5" count="0" type="stmt"/>
-        <line num="7" count="0" type="stmt"/>
-        <line num="8" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="9" count="0" type="stmt"/>
-        <line num="12" count="0" type="stmt"/>
-        <line num="13" count="0" type="stmt"/>
-        <line num="14" count="0" type="stmt"/>
-        <line num="16" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="21" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="22" count="0" type="stmt"/>
-        <line num="25" count="0" type="stmt"/>
-        <line num="26" count="0" type="stmt"/>
-        <line num="27" count="0" type="stmt"/>
-        <line num="28" count="0" type="stmt"/>
-        <line num="29" count="0" type="stmt"/>
-        <line num="30" count="0" type="stmt"/>
+      <file name="history.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/services/history.ts">
+        <metrics statements="56" coveredstatements="56" conditionals="28" coveredconditionals="27" methods="6" coveredmethods="6"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="5" count="1" type="stmt"/>
+        <line num="7" count="1" type="stmt"/>
+        <line num="8" count="52" type="cond" truecount="1" falsecount="0"/>
+        <line num="9" count="32" type="stmt"/>
+        <line num="12" count="1" type="stmt"/>
+        <line num="13" count="5" type="stmt"/>
+        <line num="14" count="5" type="stmt"/>
+        <line num="16" count="8" type="cond" truecount="4" falsecount="0"/>
+        <line num="21" count="5" type="cond" truecount="1" falsecount="0"/>
+        <line num="22" count="2" type="stmt"/>
+        <line num="25" count="1" type="stmt"/>
+        <line num="26" count="30" type="stmt"/>
+        <line num="27" count="30" type="stmt"/>
+        <line num="28" count="30" type="stmt"/>
+        <line num="29" count="30" type="stmt"/>
+        <line num="30" count="30" type="stmt"/>
+        <line num="33" count="1" type="cond" truecount="0" falsecount="1"/>
+        <line num="34" count="10" type="stmt"/>
+        <line num="37" count="10" type="stmt"/>
+        <line num="38" count="10" type="stmt"/>
+        <line num="40" count="10" type="stmt"/>
+        <line num="41" count="10" type="stmt"/>
+        <line num="42" count="10" type="stmt"/>
+        <line num="45" count="10" type="stmt"/>
+        <line num="46" count="10" type="stmt"/>
+        <line num="48" count="10" type="stmt"/>
+        <line num="49" count="10" type="stmt"/>
+        <line num="50" count="10" type="stmt"/>
+        <line num="52" count="10" type="stmt"/>
+        <line num="60" count="10" type="stmt"/>
+        <line num="61" count="17" type="stmt"/>
+        <line num="62" count="17" type="stmt"/>
+        <line num="64" count="17" type="cond" truecount="1" falsecount="0"/>
+        <line num="65" count="10" type="stmt"/>
+        <line num="74" count="17" type="stmt"/>
+        <line num="76" count="17" type="cond" truecount="4" falsecount="0"/>
+        <line num="77" count="11" type="stmt"/>
+        <line num="78" count="11" type="cond" truecount="1" falsecount="0"/>
+        <line num="79" count="10" type="stmt"/>
+        <line num="81" count="6" type="cond" truecount="3" falsecount="0"/>
+        <line num="82" count="5" type="cond" truecount="1" falsecount="0"/>
+        <line num="83" count="5" type="stmt"/>
+        <line num="88" count="10" type="stmt"/>
+        <line num="90" count="10" type="stmt"/>
+        <line num="91" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="92" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="94" count="10" type="stmt"/>
+        <line num="95" count="10" type="cond" truecount="3" falsecount="0"/>
+        <line num="96" count="3" type="stmt"/>
+        <line num="97" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="98" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="99" count="1" type="stmt"/>
+        <line num="102" count="10" type="stmt"/>
+        <line num="113" count="10" type="stmt"/>
       </file>
-      <file name="telegram.ts" path="/sessions/relaxed-gallant-ride/mnt/bsb_price_track/src/services/telegram.ts">
-        <metrics statements="53" coveredstatements="45" conditionals="17" coveredconditionals="15" methods="7" coveredmethods="6"/>
+      <file name="telegram.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/services/telegram.ts">
+        <metrics statements="88" coveredstatements="77" conditionals="34" coveredconditionals="30" methods="9" coveredmethods="8"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="4" count="1" type="stmt"/>
@@ -196,8 +234,43 @@
         <line num="124" count="2" type="stmt"/>
         <line num="125" count="2" type="stmt"/>
         <line num="130" count="0" type="stmt"/>
+        <line num="134" count="1" type="stmt"/>
+        <line num="135" count="6" type="stmt"/>
+        <line num="137" count="6" type="cond" truecount="1" falsecount="0"/>
+        <line num="138" count="1" type="stmt"/>
+        <line num="139" count="1" type="stmt"/>
+        <line num="140" count="1" type="stmt"/>
+        <line num="145" count="1" type="stmt"/>
+        <line num="147" count="0" type="stmt"/>
+        <line num="148" count="0" type="stmt"/>
+        <line num="150" count="1" type="stmt"/>
+        <line num="153" count="5" type="stmt"/>
+        <line num="159" count="5" type="stmt"/>
+        <line num="161" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="165" count="6" type="stmt"/>
+        <line num="167" count="6" type="cond" truecount="1" falsecount="1"/>
+        <line num="168" count="6" type="stmt"/>
+        <line num="170" count="0" type="stmt"/>
+        <line num="173" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="174" count="5" type="stmt"/>
+        <line num="176" count="1" type="stmt"/>
+        <line num="179" count="6" type="cond" truecount="4" falsecount="0"/>
+        <line num="180" count="5" type="stmt"/>
+        <line num="181" count="5" type="stmt"/>
+        <line num="182" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="183" count="5" type="stmt"/>
+        <line num="185" count="1" type="stmt"/>
+        <line num="188" count="6" type="stmt"/>
+        <line num="191" count="6" type="stmt"/>
+        <line num="192" count="5" type="stmt"/>
+        <line num="194" count="5" type="stmt"/>
+        <line num="196" count="5" type="stmt"/>
+        <line num="197" count="5" type="stmt"/>
+        <line num="202" count="4" type="stmt"/>
+        <line num="204" count="1" type="stmt"/>
+        <line num="205" count="1" type="stmt"/>
       </file>
-      <file name="tracker.ts" path="/sessions/relaxed-gallant-ride/mnt/bsb_price_track/src/services/tracker.ts">
+      <file name="tracker.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/services/tracker.ts">
         <metrics statements="87" coveredstatements="87" conditionals="32" coveredconditionals="28" methods="14" coveredmethods="13"/>
         <line num="1" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
@@ -238,7 +311,7 @@
         <line num="75" count="18" type="stmt"/>
         <line num="84" count="14" type="stmt"/>
         <line num="85" count="18" type="stmt"/>
-        <line num="86" count="5" type="stmt"/>
+        <line num="86" count="4" type="stmt"/>
         <line num="88" count="14" type="stmt"/>
         <line num="90" count="14" type="cond" truecount="1" falsecount="0"/>
         <line num="91" count="11" type="stmt"/>
@@ -287,7 +360,7 @@
         <line num="181" count="1" type="stmt"/>
         <line num="187" count="6" type="stmt"/>
       </file>
-      <file name="webhook.ts" path="/sessions/relaxed-gallant-ride/mnt/bsb_price_track/src/services/webhook.ts">
+      <file name="webhook.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/services/webhook.ts">
         <metrics statements="98" coveredstatements="92" conditionals="22" coveredconditionals="22" methods="15" coveredmethods="12"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
@@ -388,10 +461,23 @@
         <line num="211" count="0" type="stmt"/>
         <line num="212" count="0" type="stmt"/>
       </file>
+      <file name="weeklyReport.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/services/weeklyReport.ts">
+        <metrics statements="10" coveredstatements="10" conditionals="1" coveredconditionals="0" methods="2" coveredmethods="2"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="4" count="1" type="cond" truecount="0" falsecount="1"/>
+        <line num="5" count="3" type="stmt"/>
+        <line num="8" count="1" type="stmt"/>
+        <line num="9" count="2" type="stmt"/>
+        <line num="10" count="2" type="stmt"/>
+        <line num="11" count="2" type="stmt"/>
+        <line num="12" count="2" type="stmt"/>
+        <line num="13" count="2" type="stmt"/>
+      </file>
     </package>
     <package name="utils">
       <metrics statements="18" coveredstatements="18" conditionals="2" coveredconditionals="2" methods="4" coveredmethods="4"/>
-      <file name="dates.ts" path="/sessions/relaxed-gallant-ride/mnt/bsb_price_track/src/utils/dates.ts">
+      <file name="dates.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/utils/dates.ts">
         <metrics statements="8" coveredstatements="8" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
         <line num="1" count="2" type="stmt"/>
         <line num="2" count="29" type="stmt"/>
@@ -402,7 +488,7 @@
         <line num="7" count="74" type="stmt"/>
         <line num="9" count="29" type="stmt"/>
       </file>
-      <file name="retry.ts" path="/sessions/relaxed-gallant-ride/mnt/bsb_price_track/src/utils/retry.ts">
+      <file name="retry.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/utils/retry.ts">
         <metrics statements="10" coveredstatements="10" conditionals="2" coveredconditionals="2" methods="3" coveredmethods="3"/>
         <line num="1" count="2" type="stmt"/>
         <line num="6" count="1" type="cond" truecount="1" falsecount="0"/>

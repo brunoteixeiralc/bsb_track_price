@@ -1,7 +1,8 @@
 import fs from "fs";
 import path from "path";
 
-const TMP_DIR = path.resolve(__dirname, "../../.tmp-test-health");
+// Usa /tmp para evitar problemas de permissão em sistemas de arquivos montados
+const TMP_DIR = path.resolve("/tmp", ".bsb-test-health");
 const TMP_FILE = path.join(TMP_DIR, "health.json");
 
 jest.mock("path", () => {

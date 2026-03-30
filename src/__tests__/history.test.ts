@@ -3,7 +3,8 @@ import path from "path";
 import { HistoryEntry } from "../types";
 
 // Redireciona HISTORY_FILE para um diretório temporário nos testes
-const TMP_DIR = path.resolve(__dirname, "../../.tmp-test-history");
+// Usa /tmp para evitar problemas de permissão em sistemas de arquivos montados
+const TMP_DIR = path.resolve("/tmp", ".bsb-test-history");
 const TMP_FILE = path.join(TMP_DIR, "history.json");
 
 jest.mock("path", () => {
