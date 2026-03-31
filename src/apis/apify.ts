@@ -46,6 +46,8 @@ interface ApifyFlightLeg {
   departure_airport?: { id?: string; time?: string };
   arrival_airport?: { id?: string; time?: string };
   airline?: string;
+  flight_number?: string;
+  airplane?: string;
   duration?: number; // duração do segmento em minutos (quando disponível)
 }
 
@@ -152,7 +154,10 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
           const leg = legs[0];
           const lastLeg = legs[legs.length - 1];
           const departureDate = leg?.departure_airport?.time?.split(" ")[0] ?? params.departureDate;
+          const departureTime = leg?.departure_airport?.time?.split(" ")[1];
           const airline = leg?.airline;
+          const flightNumber = leg?.flight_number;
+          const airplane = leg?.airplane;
           const origin = leg?.departure_airport?.id ?? params.origin;
           const destination = (lastLeg ?? leg)?.arrival_airport?.id ?? params.destination;
 
@@ -196,6 +201,9 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
             durationMinutes,
             link,
             source: "apify",
+            flightNumber,
+            airplane,
+            departureTime,
             priceInsights,
           });
         }

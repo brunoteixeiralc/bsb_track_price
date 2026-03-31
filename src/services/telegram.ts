@@ -36,6 +36,15 @@ async function buildMessage(flight: Flight): Promise<string> {
     lines.push(`🏢 ${flight.airline}`);
   }
 
+  if (flight.flightNumber || flight.airplane) {
+    const parts = [flight.flightNumber, flight.airplane].filter(Boolean);
+    lines.push(`🛩️ ${parts.join(" · ")}`);
+  }
+
+  if (flight.departureTime) {
+    lines.push(`🕐 Partida: ${flight.departureTime}`);
+  }
+
   lines.push(`💰 *${formatBRL(flight.priceBRL)}*`);
 
   if (flight.source === "apify" && flight.priceInsights) {
