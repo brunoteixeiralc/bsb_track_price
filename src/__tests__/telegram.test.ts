@@ -203,6 +203,53 @@ describe("sendFlightAlert", () => {
     expect(text).toContain("+20%");
   });
 
+  it("exibe melhor dia da semana quando priceHistory tem dias distintos", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    // 2026-03-23 = segunda (índice 1), 2026-03-25 = quarta (índice 3)
+    const { sendFlightAlert } = await import("../services/telegram");
+    await sendFlightAlert({
+      ...baseFlight,
+      source: "apify",
+      priceInsights: {
+        lowestPrice: 80,
+        priceLevel: "low",
+        typicalPriceRange: [100, 300],
+        priceHistory: [
+          [Math.floor(new Date("2026-03-23").getTime() / 1000), 500], // segunda → caro
+          [Math.floor(new Date("2026-03-25").getTime() / 1000), 200], // quarta  → barato
+        ],
+      },
+    });
+
+    const { text } = JSON.parse(mock.history.post[0].data);
+    expect(text).toContain("📅 Melhor dia para comprar:");
+    expect(text).toContain("quarta-feira");
+  });
+
+  it("não exibe melhor dia quando priceHistory tem apenas um dia da semana", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    // dois pontos mas ambos segunda-feira
+    const { sendFlightAlert } = await import("../services/telegram");
+    await sendFlightAlert({
+      ...baseFlight,
+      source: "apify",
+      priceInsights: {
+        lowestPrice: 80,
+        priceLevel: "low",
+        typicalPriceRange: [100, 300],
+        priceHistory: [
+          [Math.floor(new Date("2026-03-23").getTime() / 1000), 400],
+          [Math.floor(new Date("2026-03-16").getTime() / 1000), 420],
+        ],
+      },
+    });
+
+    const { text } = JSON.parse(mock.history.post[0].data);
+    expect(text).not.toContain("Melhor dia para comprar");
+  });
+
   it("não exibe linha de tendência quando priceHistory ausente", async () => {
     mock.onPost(/sendMessage/).reply(200, { ok: true });
 

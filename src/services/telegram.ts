@@ -2,7 +2,7 @@ import axios from "axios";
 import { config } from "../config";
 import { Flight, TripType, WeeklyRouteSummary } from "../types";
 import { formatBRL, convertToBRL } from "./currency";
-import { calcTrend } from "../utils/priceHistory";
+import { calcTrend, bestDayOfWeek } from "../utils/priceHistory";
 
 const BASE_URL = `https://api.telegram.org/bot${config.telegram.botToken}`;
 const TIMEOUT_MS = 10_000;
@@ -75,6 +75,11 @@ async function buildMessage(flight: Flight, lowLevelAlert = false): Promise<stri
           trend.direction === "down" ? "📉" : "➡️";
         const sign = trend.pct > 0 ? "+" : "";
         lines.push(`${trendEmoji} Tendência 7 dias: ${sign}${trend.pct}%`);
+      }
+
+      const best = bestDayOfWeek(pi.priceHistory);
+      if (best) {
+        lines.push(`📅 Melhor dia para comprar: *${best.dayName}*`);
       }
     }
   }

@@ -37,3 +37,61 @@ export function calcTrend(
 
   return { direction, pct };
 }
+
+const PT_DAYS = [
+  "domingo",
+  "segunda-feira",
+  "terça-feira",
+  "quarta-feira",
+  "quinta-feira",
+  "sexta-feira",
+  "sábado",
+];
+
+export interface BestDayResult {
+  dayIndex: number; // 0 = domingo … 6 = sábado
+  dayName: string;  // em português
+  avgPrice: number; // preço médio (mesma unidade que o histórico)
+}
+
+/**
+ * Retorna o dia da semana com menor preço médio histórico.
+ *
+ * Usa todo o histórico disponível (sem janela de dias) para maximizar
+ * a quantidade de amostras por dia.
+ * Requer pelo menos 2 dias da semana distintos representados nos dados.
+ *
+ * @param history  Array de [timestamp_unix_segundos, preço]
+ * @returns BestDayResult ou null se não houver dados suficientes
+ */
+export function bestDayOfWeek(history: [number, number][]): BestDayResult | null {
+  if (history.length < 2) return null;
+
+  // Agrupa preços por dia da semana (UTC)
+  const groups = new Map<number, number[]>();
+  for (const [ts, price] of history) {
+    const dayIndex = new Date(ts * 1000).getUTCDay();
+    if (!groups.has(dayIndex)) groups.set(dayIndex, []);
+    groups.get(dayIndex)!.push(price);
+  }
+
+  // Precisa de pelo menos 2 dias distintos para ter comparação significativa
+  if (groups.size < 2) return null;
+
+  let bestDay = -1;
+  let bestAvg = Infinity;
+
+  for (const [day, prices] of groups) {
+    const avg = prices.reduce((sum, p) => sum + p, 0) / prices.length;
+    if (avg < bestAvg) {
+      bestAvg = avg;
+      bestDay = day;
+    }
+  }
+
+  return {
+    dayIndex: bestDay,
+    dayName: PT_DAYS[bestDay],
+    avgPrice: Math.round(bestAvg),
+  };
+}

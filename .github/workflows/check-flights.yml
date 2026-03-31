@@ -30,6 +30,11 @@ jobs:
 
       - name: Run flight tracker
         env:
+          APIFY_API_TOKEN_1: ${{ secrets.APIFY_API_TOKEN_1 }}
+          APIFY_API_TOKEN_2: ${{ secrets.APIFY_API_TOKEN_2 }}
+          APIFY_API_TOKEN_3: ${{ secrets.APIFY_API_TOKEN_3 }}
+          APIFY_API_TOKEN_4: ${{ secrets.APIFY_API_TOKEN_4 }}
+          APIFY_API_TOKEN_5: ${{ secrets.APIFY_API_TOKEN_5 }}
           APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
           RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
