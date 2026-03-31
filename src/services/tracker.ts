@@ -245,5 +245,5 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
     }
   }
 
-  await sendDateRangeSummary(route, dates.length, best, config.search.maxPriceBRL, config.search.tripType);
+  await sendDateRangeSummary(route, dates.length, best, config.search.maxPriceBRL, config.search.tripType, dates[0], dates[dates.length - 1]);
 }

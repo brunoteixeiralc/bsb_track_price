@@ -145,13 +145,16 @@ export async function sendDateRangeSummary(
   datesChecked: number,
   bestFlight: Flight | null,
   threshold: number,
-  tripType: TripType = "one-way"
+  tripType: TripType = "one-way",
+  startDate?: string,
+  endDate?: string,
 ): Promise<void> {
   const tripLabel = tripType === "round-trip" ? "🔄 Ida e Volta" : "✈️ Somente Ida";
+  const periodLabel = startDate && endDate ? ` — ${formatDate(startDate)} a ${formatDate(endDate)}` : "";
   const noBest = !bestFlight || bestFlight.priceBRL > threshold;
   const text = noBest
-    ? `🗓️ *${route}* (${tripLabel}) — ${datesChecked} data(s) verificada(s). Nenhum voo abaixo de ${formatBRL(threshold)}.`
-    : `🗓️ *${route}* (${tripLabel}) — ${datesChecked} data(s) verificada(s).\n💰 Melhor: *${formatBRL(bestFlight!.priceBRL)}* em ${formatDate(bestFlight!.departureDate)}${bestFlight!.airline ? ` (${bestFlight!.airline})` : ""}`;
+    ? `🗓️ *${route}* (${tripLabel})${periodLabel} — ${datesChecked} data(s) verificada(s). Nenhum voo abaixo de ${formatBRL(threshold)}.`
+    : `🗓️ *${route}* (${tripLabel})${periodLabel} — ${datesChecked} data(s) verificada(s).\n💰 Melhor: *${formatBRL(bestFlight!.priceBRL)}* em ${formatDate(bestFlight!.departureDate)}${bestFlight!.airline ? ` (${bestFlight!.airline})` : ""}`;
 
   try {
     await axios.post(`${BASE_URL}/sendMessage`, {

@@ -241,7 +241,7 @@ describe("runTracker", () => {
     expect(mockSearchWithApify).toHaveBeenCalledTimes(3);
     expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
     expect((mockSendFlightAlert.mock.calls[0][0] as Flight).priceBRL).toBe(200);
-    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 3, expect.objectContaining({ priceBRL: 200 }), 300, "one-way");
+    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 3, expect.objectContaining({ priceBRL: 200 }), 300, "one-way", "2026-06-01", "2026-06-03");
   });
 
   it("com dateRangeDays>1 não alerta se nenhuma data estiver abaixo do threshold", async () => {
@@ -252,7 +252,7 @@ describe("runTracker", () => {
     await runTracker();
 
     expect(mockSendFlightAlert).not.toHaveBeenCalled();
-    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, expect.objectContaining({ priceBRL: 400 }), 300, "one-way");
+    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, expect.objectContaining({ priceBRL: 400 }), 300, "one-way", "2026-06-01", "2026-06-02");
   });
 
   it("com dateRangeDays>1 pula datas onde ambas as APIs falham", async () => {
@@ -266,7 +266,7 @@ describe("runTracker", () => {
     await runTracker();
 
     expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
-    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, expect.objectContaining({ priceBRL: 250 }), 300, "one-way");
+    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, expect.objectContaining({ priceBRL: 250 }), 300, "one-way", "2026-06-01", "2026-06-02");
   });
 
   it("passa tripType round-trip e returnDate nos params da busca", async () => {
