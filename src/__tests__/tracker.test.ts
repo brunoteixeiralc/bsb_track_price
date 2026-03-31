@@ -42,12 +42,14 @@ jest.mock("../apis/rapidapi", () => ({
 
 const mockSendDateRangeSummary = jest.fn();
 const mockSendErrorAlert = jest.fn();
+const mockSendAntiSpamNotice = jest.fn();
 
 jest.mock("../services/telegram", () => ({
   sendFlightAlert: (...args: unknown[]) => mockSendFlightAlert(...args),
   sendSummary: (...args: unknown[]) => mockSendSummary(...args),
   sendDateRangeSummary: (...args: unknown[]) => mockSendDateRangeSummary(...args),
   sendErrorAlert: (...args: unknown[]) => mockSendErrorAlert(...args),
+  sendAntiSpamNotice: (...args: unknown[]) => mockSendAntiSpamNotice(...args),
 }));
 
 jest.mock("../services/history", () => ({
@@ -70,6 +72,7 @@ beforeEach(() => {
   mockSendSummary.mockResolvedValue(undefined);
   mockSendDateRangeSummary.mockResolvedValue(undefined);
   mockSendErrorAlert.mockResolvedValue(undefined);
+  mockSendAntiSpamNotice.mockResolvedValue(undefined);
   mockAppendHistory.mockReturnValue(undefined);
   // Por padrão, sem histórico anterior (primeira busca → alerta permitido)
   mockGetLastCheapestPrice.mockReturnValue(null);

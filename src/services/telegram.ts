@@ -92,6 +92,19 @@ export async function sendFlightAlert(flight: Flight): Promise<void> {
   }
 }
 
+export async function sendAntiSpamNotice(route: string, currentBRL: number, previousBRL: number): Promise<void> {
+  const text = `🔕 *${route}* — preço não caiu ≥5%\n💰 Atual: ${formatBRL(currentBRL)} | Anterior: ${formatBRL(previousBRL)}`;
+  try {
+    await axios.post(`${BASE_URL}/sendMessage`, {
+      chat_id: config.telegram.chatId,
+      text,
+      parse_mode: "Markdown",
+    }, { timeout: TIMEOUT_MS });
+  } catch (err) {
+    console.error("[telegram] Erro ao enviar aviso anti-spam:", err);
+  }
+}
+
 export async function sendErrorAlert(route: string, details: string): Promise<void> {
   const now = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
   const text = [

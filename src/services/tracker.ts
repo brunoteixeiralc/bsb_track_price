@@ -2,7 +2,7 @@ import { config } from "../config";
 import { Flight, SearchParams } from "../types";
 import { searchWithApify } from "../apis/apify";
 import { searchWithRapidAPI } from "../apis/rapidapi";
-import { sendFlightAlert, sendSummary, sendDateRangeSummary, sendErrorAlert } from "./telegram";
+import { sendFlightAlert, sendSummary, sendDateRangeSummary, sendErrorAlert, sendAntiSpamNotice } from "./telegram";
 import { appendHistory, getLastCheapestPrice } from "./history";
 import { withRetry } from "../utils/retry";
 import { generateDateRange } from "../utils/dates";
@@ -161,6 +161,7 @@ async function searchAndNotify(params: SearchParams): Promise<void> {
       console.log(
         `[tracker] Anti-spam: preço não caiu ≥5% (atual R$${currentCheapest} vs anterior R$${previousCheapest}). Alerta suprimido.`
       );
+      await sendAntiSpamNotice(route, currentCheapest, previousCheapest!);
     }
   }
 
@@ -240,6 +241,7 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
       console.log(
         `[tracker] Anti-spam: preço não caiu ≥5% em ${best.departureDate} (atual R$${best.priceBRL} vs anterior R$${previousCheapest}). Alerta suprimido.`
       );
+      await sendAntiSpamNotice(route, best.priceBRL, previousCheapest!);
     }
   }
 
