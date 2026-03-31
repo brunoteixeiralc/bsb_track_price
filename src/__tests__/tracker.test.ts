@@ -400,6 +400,56 @@ describe("runTracker", () => {
     expect((mockSendFlightAlert.mock.calls[0][0] as Flight).priceBRL).toBe(180);
   });
 
+  // ── price_level "low" independente do threshold ───────────────────────────
+
+  it("alerta com lowLevelAlert=true quando voo tem price_level=low acima do threshold", async () => {
+    const lowFlight = {
+      ...makeFlight(500), // acima do threshold de 300
+      priceInsights: { lowestPrice: 400, priceLevel: "low" as const, typicalPriceRange: [450, 600] as [number, number] },
+    };
+    mockSearchWithApify.mockResolvedValue([lowFlight]);
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    // sendFlightAlert deve ter sido chamado com lowLevelAlert=true
+    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
+    expect(mockSendFlightAlert.mock.calls[0][1]).toBe(true);
+  });
+
+  it("não envia low-level alert para voos com price_level=low abaixo do threshold (já coberto pelo alerta normal)", async () => {
+    const lowFlight = {
+      ...makeFlight(200), // abaixo do threshold
+      priceInsights: { lowestPrice: 150, priceLevel: "low" as const, typicalPriceRange: [180, 300] as [number, number] },
+    };
+    mockSearchWithApify.mockResolvedValue([lowFlight]);
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    // chamado 1x pelo threshold normal (lowLevelAlert=false), não 2x
+    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
+    expect(mockSendFlightAlert.mock.calls[0][1]).toBeUndefined(); // default false
+  });
+
+  it("alerta com lowLevelAlert=true no modo dateRange quando voo com price_level=low está acima do threshold", async () => {
+    mockConfig.search.dateRangeDays = 2;
+    const lowFlight = {
+      ...makeFlight(500),
+      departureDate: "2026-06-01",
+      priceInsights: { lowestPrice: 400, priceLevel: "low" as const, typicalPriceRange: [450, 600] as [number, number] },
+    };
+    mockSearchWithApify.mockResolvedValue([lowFlight]);
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    expect(mockSendFlightAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ priceBRL: 500 }),
+      true
+    );
+  });
+
   // ── Múltiplas origens (ORIGINS=BSB,GRU) ───────────────────────────────────
 
   it("com múltiplas origens, busca todas as combinações origem→destino, pulando origem===destino", async () => {

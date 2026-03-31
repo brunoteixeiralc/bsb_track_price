@@ -17,11 +17,11 @@ function formatDate(dateStr: string): string {
   return `${day}/${month}/${year}`;
 }
 
-async function buildMessage(flight: Flight): Promise<string> {
+async function buildMessage(flight: Flight, lowLevelAlert = false): Promise<string> {
   const tripLabel = flight.tripType === "round-trip" ? "🔄 Ida e Volta" : "✈️ Somente Ida";
 
   const lines = [
-    `✈️ *Passagem barata encontrada!*`,
+    lowLevelAlert ? `📉 *Preço em nível histórico BAIXO!*` : `✈️ *Passagem barata encontrada!*`,
     ``,
     `🛫 *${flight.origin} → ${flight.destination}*`,
     `🏷️ ${tripLabel}`,
@@ -75,8 +75,8 @@ async function buildMessage(flight: Flight): Promise<string> {
   return lines.join("\n");
 }
 
-export async function sendFlightAlert(flight: Flight): Promise<void> {
-  const text = await buildMessage(flight);
+export async function sendFlightAlert(flight: Flight, lowLevelAlert = false): Promise<void> {
+  const text = await buildMessage(flight, lowLevelAlert);
 
   try {
     await axios.post(`${BASE_URL}/sendMessage`, {

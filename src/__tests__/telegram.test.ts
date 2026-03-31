@@ -161,6 +161,29 @@ describe("sendFlightAlert", () => {
     expect(text).not.toContain("💡");
   });
 
+  it("exibe header de nível histórico BAIXO quando lowLevelAlert=true", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendFlightAlert } = await import("../services/telegram");
+    await (sendFlightAlert as (f: typeof baseFlight, low: boolean) => Promise<void>)(baseFlight, true);
+
+    const { text } = JSON.parse(mock.history.post[0].data);
+    expect(text).toContain("📉");
+    expect(text).toContain("nível histórico BAIXO");
+    expect(text).not.toContain("Passagem barata encontrada");
+  });
+
+  it("exibe header padrão quando lowLevelAlert=false (default)", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendFlightAlert } = await import("../services/telegram");
+    await sendFlightAlert(baseFlight);
+
+    const { text } = JSON.parse(mock.history.post[0].data);
+    expect(text).toContain("Passagem barata encontrada");
+    expect(text).not.toContain("nível histórico BAIXO");
+  });
+
   it("não inclui linhas 📊/💡 quando source é rapidapi", async () => {
     mock.onPost(/sendMessage/).reply(200, { ok: true });
 

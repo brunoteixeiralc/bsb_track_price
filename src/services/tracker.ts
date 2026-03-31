@@ -165,6 +165,16 @@ async function searchAndNotify(params: SearchParams): Promise<void> {
     }
   }
 
+  // Alerta por price_level === "low" independente do threshold
+  const lowLevelFlights = flights
+    .filter((f) => f.priceInsights?.priceLevel === "low" && f.priceBRL > config.search.maxPriceBRL)
+    .sort((a, b) => a.priceBRL - b.priceBRL);
+
+  if (lowLevelFlights.length > 0) {
+    console.log(`[tracker] ${lowLevelFlights.length} voo(s) com nível histórico BAIXO acima do threshold. Enviando alerta.`);
+    await sendFlightAlert(lowLevelFlights[0], true);
+  }
+
   await sendSummary(cheapFlights.length, flights.length, route);
 }
 
@@ -173,6 +183,7 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
   console.log(`[tracker] Varrendo ${dates.length} data(s) para ${route}...`);
 
   const cheapestPerDate: Flight[] = [];
+  const lowLevelPerDate: Flight[] = [];
   const previousPricePerDate = new Map<string, number | null>();
   let apiFailures = 0;
 
@@ -214,6 +225,12 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
     if (flights.length > 0) {
       cheapestPerDate.push(flights.reduce((a, b) => (a.priceBRL < b.priceBRL ? a : b)));
     }
+
+    // Coleta o melhor voo com price_level "low" acima do threshold nesta data
+    const cheapLowLevel = flights
+      .filter((f) => f.priceInsights?.priceLevel === "low" && f.priceBRL > config.search.maxPriceBRL)
+      .sort((a, b) => a.priceBRL - b.priceBRL)[0];
+    if (cheapLowLevel) lowLevelPerDate.push(cheapLowLevel);
   }
 
   if (apiFailures === dates.length) {
@@ -243,6 +260,13 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
       );
       await sendAntiSpamNotice(route, best.priceBRL, previousCheapest!);
     }
+  }
+
+  // Alerta por price_level === "low" independente do threshold (melhor entre todas as datas)
+  if (lowLevelPerDate.length > 0) {
+    const bestLowLevel = lowLevelPerDate.reduce((a, b) => (a.priceBRL < b.priceBRL ? a : b));
+    console.log(`[tracker] Melhor voo com nível histórico BAIXO: R$${bestLowLevel.priceBRL} em ${bestLowLevel.departureDate}. Enviando alerta.`);
+    await sendFlightAlert(bestLowLevel, true);
   }
 
   await sendDateRangeSummary(route, dates.length, best, config.search.maxPriceBRL, config.search.tripType, dates[0], dates[dates.length - 1]);
