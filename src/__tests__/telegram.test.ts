@@ -150,6 +150,78 @@ describe("sendFlightAlert", () => {
     expect(text).toContain("acima da média histórica");
   });
 
+  it("exibe linha de tendência de queda quando priceHistory indica queda", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    // 7 dias atrás → agora: preço caiu 20%
+    const nowS = Math.floor(Date.now() / 1000);
+    const DAY = 86400;
+    const { sendFlightAlert } = await import("../services/telegram");
+    await sendFlightAlert({
+      ...baseFlight,
+      priceBRL: 250,
+      source: "apify",
+      priceInsights: {
+        lowestPrice: 80,
+        priceLevel: "low",
+        typicalPriceRange: [100, 300],
+        priceHistory: [
+          [nowS - 6 * DAY, 500],
+          [nowS - 1 * DAY, 400], // queda de 20%
+        ],
+      },
+    });
+
+    const { text } = JSON.parse(mock.history.post[0].data);
+    expect(text).toContain("📉 Tendência 7 dias:");
+    expect(text).toContain("-20%");
+  });
+
+  it("exibe linha de tendência de alta quando priceHistory indica subida", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const nowS = Math.floor(Date.now() / 1000);
+    const DAY = 86400;
+    const { sendFlightAlert } = await import("../services/telegram");
+    await sendFlightAlert({
+      ...baseFlight,
+      priceBRL: 250,
+      source: "apify",
+      priceInsights: {
+        lowestPrice: 80,
+        priceLevel: "typical",
+        typicalPriceRange: [100, 300],
+        priceHistory: [
+          [nowS - 5 * DAY, 300],
+          [nowS - 1 * DAY, 360], // alta de 20%
+        ],
+      },
+    });
+
+    const { text } = JSON.parse(mock.history.post[0].data);
+    expect(text).toContain("📈 Tendência 7 dias:");
+    expect(text).toContain("+20%");
+  });
+
+  it("não exibe linha de tendência quando priceHistory ausente", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendFlightAlert } = await import("../services/telegram");
+    await sendFlightAlert({
+      ...baseFlight,
+      source: "apify",
+      priceInsights: {
+        lowestPrice: 80,
+        priceLevel: "low",
+        typicalPriceRange: [100, 300],
+        // sem priceHistory
+      },
+    });
+
+    const { text } = JSON.parse(mock.history.post[0].data);
+    expect(text).not.toContain("Tendência");
+  });
+
   it("não inclui linhas 📊/💡 quando priceInsights ausente", async () => {
     mock.onPost(/sendMessage/).reply(200, { ok: true });
 

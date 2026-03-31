@@ -2,6 +2,7 @@ import axios from "axios";
 import { config } from "../config";
 import { Flight, TripType, WeeklyRouteSummary } from "../types";
 import { formatBRL, convertToBRL } from "./currency";
+import { calcTrend } from "../utils/priceHistory";
 
 const BASE_URL = `https://api.telegram.org/bot${config.telegram.botToken}`;
 const TIMEOUT_MS = 10_000;
@@ -64,6 +65,17 @@ async function buildMessage(flight: Flight, lowLevelAlert = false): Promise<stri
       lines.push(`💡 Este preço está ${diffPct}% abaixo da média histórica`);
     } else if (diffPct < 0) {
       lines.push(`💡 Este preço está ${Math.abs(diffPct)}% acima da média histórica`);
+    }
+
+    if (pi.priceHistory) {
+      const trend = calcTrend(pi.priceHistory);
+      if (trend) {
+        const trendEmoji =
+          trend.direction === "up" ? "📈" :
+          trend.direction === "down" ? "📉" : "➡️";
+        const sign = trend.pct > 0 ? "+" : "";
+        lines.push(`${trendEmoji} Tendência 7 dias: ${sign}${trend.pct}%`);
+      }
     }
   }
 
