@@ -1,6 +1,6 @@
 import axios, { isAxiosError } from "axios";
 import { config } from "../config";
-import { Flight, SearchParams } from "../types";
+import { Flight, SearchParams, PriceInsights } from "../types";
 import { convertToBRL, getUSDtoBRL } from "../services/currency";
 
 const APIFY_BASE = "https://api.apify.com/v2";
@@ -55,10 +55,18 @@ interface ApifyFlightOption {
   flights?: ApifyFlightLeg[];
 }
 
+interface ApifyPriceInsights {
+  lowest_price?: number;
+  price_level?: string;
+  typical_price_range?: [number, number];
+  price_history?: [number, number][];
+}
+
 interface ApifyDatasetItem {
   search_parameters?: { departure_id?: string; arrival_id?: string; outbound_date?: string };
   best_flights?: ApifyFlightOption[];
   other_flights?: ApifyFlightOption[];
+  price_insights?: ApifyPriceInsights;
 }
 
 export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
@@ -110,6 +118,28 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
       const flights: Flight[] = [];
 
       for (const item of items) {
+        // Extrai price_insights uma vez por item (compartilhado por todos os voos do item)
+        const rawInsights = item.price_insights;
+        let priceInsights: PriceInsights | undefined;
+
+        if (
+          rawInsights &&
+          typeof rawInsights.lowest_price === "number" &&
+          rawInsights.price_level &&
+          Array.isArray(rawInsights.typical_price_range) &&
+          rawInsights.typical_price_range.length === 2
+        ) {
+          const level = rawInsights.price_level;
+          if (level === "low" || level === "typical" || level === "high") {
+            priceInsights = {
+              lowestPrice: rawInsights.lowest_price,
+              priceLevel: level,
+              typicalPriceRange: rawInsights.typical_price_range as [number, number],
+              ...(rawInsights.price_history ? { priceHistory: rawInsights.price_history } : {}),
+            };
+          }
+        }
+
         const allOptions = [
           ...(item.best_flights ?? []),
           ...(item.other_flights ?? []),
@@ -166,6 +196,7 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
             durationMinutes,
             link,
             source: "apify",
+            priceInsights,
           });
         }
       }

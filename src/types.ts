@@ -1,5 +1,12 @@
 export type TripType = "one-way" | "round-trip";
 
+export interface PriceInsights {
+  lowestPrice: number;                  // USD — menor preço histórico registrado
+  priceLevel: "low" | "typical" | "high";
+  typicalPriceRange: [number, number];  // USD — [min, max] da faixa típica
+  priceHistory?: [number, number][];    // [[timestamp_unix, preço], ...]
+}
+
 export interface Flight {
   origin: string;
   destination: string;
@@ -14,6 +21,7 @@ export interface Flight {
   durationMinutes?: number; // duração total do voo em minutos
   link: string;
   source: "apify" | "rapidapi";
+  priceInsights?: PriceInsights;
 }
 
 export interface SearchParams {

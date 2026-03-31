@@ -1,17 +1,23 @@
 import axios from "axios";
 import { config } from "../config";
 import { Flight, TripType, WeeklyRouteSummary } from "../types";
-import { formatBRL } from "./currency";
+import { formatBRL, convertToBRL } from "./currency";
 
 const BASE_URL = `https://api.telegram.org/bot${config.telegram.botToken}`;
 const TIMEOUT_MS = 10_000;
+
+const PRICE_LEVEL_PT: Record<"low" | "typical" | "high", string> = {
+  low: "BAIXO",
+  typical: "TÍPICO",
+  high: "ALTO",
+};
 
 function formatDate(dateStr: string): string {
   const [year, month, day] = dateStr.split("-");
   return `${day}/${month}/${year}`;
 }
 
-function buildMessage(flight: Flight): string {
+async function buildMessage(flight: Flight): Promise<string> {
   const tripLabel = flight.tripType === "round-trip" ? "🔄 Ida e Volta" : "✈️ Somente Ida";
 
   const lines = [
@@ -31,6 +37,27 @@ function buildMessage(flight: Flight): string {
   }
 
   lines.push(`💰 *${formatBRL(flight.priceBRL)}*`);
+
+  if (flight.source === "apify" && flight.priceInsights) {
+    const pi = flight.priceInsights;
+    const levelLabel = PRICE_LEVEL_PT[pi.priceLevel];
+    const [rangeMinUSD, rangeMaxUSD] = pi.typicalPriceRange;
+    const rangeMinBRL = await convertToBRL(rangeMinUSD, "USD");
+    const rangeMaxBRL = await convertToBRL(rangeMaxUSD, "USD");
+
+    lines.push(``);
+    lines.push(`📊 Nível: *${levelLabel}* — faixa típica ${formatBRL(rangeMinBRL)} – ${formatBRL(rangeMaxBRL)}`);
+
+    const midpointBRL = (rangeMinBRL + rangeMaxBRL) / 2;
+    const diffPct = Math.round(((midpointBRL - flight.priceBRL) / midpointBRL) * 100);
+
+    if (diffPct > 0) {
+      lines.push(`💡 Este preço está ${diffPct}% abaixo da média histórica`);
+    } else if (diffPct < 0) {
+      lines.push(`💡 Este preço está ${Math.abs(diffPct)}% acima da média histórica`);
+    }
+  }
+
   lines.push(``);
   lines.push(`🔗 [Ver passagem](${flight.link})`);
   lines.push(``);
@@ -40,7 +67,7 @@ function buildMessage(flight: Flight): string {
 }
 
 export async function sendFlightAlert(flight: Flight): Promise<void> {
-  const text = buildMessage(flight);
+  const text = await buildMessage(flight);
 
   try {
     await axios.post(`${BASE_URL}/sendMessage`, {

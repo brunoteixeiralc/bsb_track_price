@@ -12,6 +12,14 @@ jest.mock("../config", () => ({
   },
 }));
 
+jest.mock("../services/currency", () => ({
+  formatBRL: (v: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v),
+  convertToBRL: jest.fn().mockImplementation(async (amount: number) =>
+    Math.round(amount * 5.5 * 100) / 100
+  ),
+}));
+
 const mock = new MockAdapter(axios);
 
 afterEach(() => {
@@ -96,6 +104,80 @@ describe("sendFlightAlert", () => {
     const requestBody = JSON.parse(mock.history.post[0].data);
     expect(requestBody.text).toContain("Ida e Volta");
     expect(requestBody.text).toContain("10/06/2026");
+  });
+
+  it("inclui linhas 📊 e 💡 quando priceInsights presente e preço abaixo da média", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    // priceBRL = 250, range [100, 300] USD → BRL: [550, 1650], midpoint = 1100
+    // diffPct = round((1100 - 250) / 1100 * 100) = 77%
+    const { sendFlightAlert } = await import("../services/telegram");
+    await sendFlightAlert({
+      ...baseFlight,
+      priceBRL: 250,
+      source: "apify",
+      priceInsights: {
+        lowestPrice: 80,
+        priceLevel: "low",
+        typicalPriceRange: [100, 300],
+      },
+    });
+
+    const { text } = JSON.parse(mock.history.post[0].data);
+    expect(text).toContain("📊 Nível: *BAIXO*");
+    expect(text).toContain("💡 Este preço está");
+    expect(text).toContain("abaixo da média histórica");
+  });
+
+  it("exibe 'acima da média' quando priceBRL supera o ponto médio da faixa típica", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    // range [10, 20] USD → BRL: [55, 110], midpoint = 82.5; priceBRL = 500 > midpoint
+    const { sendFlightAlert } = await import("../services/telegram");
+    await sendFlightAlert({
+      ...baseFlight,
+      priceBRL: 500,
+      source: "apify",
+      priceInsights: {
+        lowestPrice: 10,
+        priceLevel: "high",
+        typicalPriceRange: [10, 20],
+      },
+    });
+
+    const { text } = JSON.parse(mock.history.post[0].data);
+    expect(text).toContain("📊 Nível: *ALTO*");
+    expect(text).toContain("acima da média histórica");
+  });
+
+  it("não inclui linhas 📊/💡 quando priceInsights ausente", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendFlightAlert } = await import("../services/telegram");
+    await sendFlightAlert({ ...baseFlight, priceInsights: undefined });
+
+    const { text } = JSON.parse(mock.history.post[0].data);
+    expect(text).not.toContain("📊");
+    expect(text).not.toContain("💡");
+  });
+
+  it("não inclui linhas 📊/💡 quando source é rapidapi", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    const { sendFlightAlert } = await import("../services/telegram");
+    await sendFlightAlert({
+      ...baseFlight,
+      source: "rapidapi",
+      priceInsights: {
+        lowestPrice: 80,
+        priceLevel: "low",
+        typicalPriceRange: [100, 300],
+      },
+    });
+
+    const { text } = JSON.parse(mock.history.post[0].data);
+    expect(text).not.toContain("📊");
+    expect(text).not.toContain("💡");
   });
 });
 

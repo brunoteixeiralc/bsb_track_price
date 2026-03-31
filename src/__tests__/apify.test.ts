@@ -62,6 +62,14 @@ function makeDatasetItem(options: { price: number; airline?: string }[]) {
   ];
 }
 
+// Helper: cria dataset com price_insights
+function makeDatasetItemWithInsights(
+  options: { price: number; airline?: string }[],
+  priceInsights: unknown
+) {
+  return [{ ...makeDatasetItem(options)[0], price_insights: priceInsights }];
+}
+
 describe("searchWithApify", () => {
   it("retorna voos mapeados usando run-sync-get-dataset-items", async () => {
     mock.onPost(/run-sync-get-dataset-items/).reply(200, makeDatasetItem([{ price: 1500, airline: "Gol" }]));
@@ -235,6 +243,72 @@ describe("searchWithApify", () => {
 
     const body = JSON.parse(mock.history.post[0].data);
     expect(body.airlines).toBe("LA"); // só LATAM foi mapeada
+  });
+
+  describe("price_insights", () => {
+    it("extrai priceInsights corretamente de um item com price_insights válido", async () => {
+      mock.onPost(/run-sync-get-dataset-items/).reply(
+        200,
+        makeDatasetItemWithInsights([{ price: 100 }], {
+          lowest_price: 80,
+          price_level: "low",
+          typical_price_range: [90, 200],
+          price_history: [[1700000000, 95]],
+        })
+      );
+
+      const { searchWithApify } = await import("../apis/apify");
+      const flights = await searchWithApify(params);
+
+      expect(flights[0].priceInsights).toEqual({
+        lowestPrice: 80,
+        priceLevel: "low",
+        typicalPriceRange: [90, 200],
+        priceHistory: [[1700000000, 95]],
+      });
+    });
+
+    it("propaga priceInsights para todos os voos do mesmo item (best + other)", async () => {
+      mock.onPost(/run-sync-get-dataset-items/).reply(200, [
+        {
+          best_flights: [{ price: 100, flights: [{ departure_airport: { id: "BSB", time: "2026-06-01 08:00" }, arrival_airport: { id: "GRU" }, airline: "LATAM" }] }],
+          other_flights: [{ price: 120, flights: [{ departure_airport: { id: "BSB", time: "2026-06-01 12:00" }, arrival_airport: { id: "GRU" }, airline: "Gol" }] }],
+          price_insights: { lowest_price: 80, price_level: "low", typical_price_range: [90, 200] },
+        },
+      ]);
+
+      const { searchWithApify } = await import("../apis/apify");
+      const flights = await searchWithApify(params);
+
+      expect(flights).toHaveLength(2);
+      expect(flights[0].priceInsights?.priceLevel).toBe("low");
+      expect(flights[1].priceInsights?.priceLevel).toBe("low");
+    });
+
+    it("priceInsights é undefined quando item não tem price_insights", async () => {
+      mock.onPost(/run-sync-get-dataset-items/).reply(200, makeDatasetItem([{ price: 100 }]));
+
+      const { searchWithApify } = await import("../apis/apify");
+      const flights = await searchWithApify(params);
+
+      expect(flights[0].priceInsights).toBeUndefined();
+    });
+
+    it("priceInsights é undefined quando price_level tem valor desconhecido", async () => {
+      mock.onPost(/run-sync-get-dataset-items/).reply(
+        200,
+        makeDatasetItemWithInsights([{ price: 100 }], {
+          lowest_price: 80,
+          price_level: "unknown_level",
+          typical_price_range: [90, 200],
+        })
+      );
+
+      const { searchWithApify } = await import("../apis/apify");
+      const flights = await searchWithApify(params);
+
+      expect(flights[0].priceInsights).toBeUndefined();
+    });
   });
 
   describe("rotação de tokens", () => {
