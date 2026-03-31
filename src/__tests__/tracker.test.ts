@@ -5,6 +5,7 @@ const mockConfig = {
   rapidapi: { key: "key", host: "host" },
   telegram: { botToken: "bot", chatId: "chat" },
   search: {
+    origins: ["BSB"],
     origin: "BSB",
     destinations: ["GRU"],
     departureDate: "2026-06-01",
@@ -72,6 +73,8 @@ beforeEach(() => {
   mockAppendHistory.mockReturnValue(undefined);
   // Por padrão, sem histórico anterior (primeira busca → alerta permitido)
   mockGetLastCheapestPrice.mockReturnValue(null);
+  mockConfig.search.origins = ["BSB"];
+  mockConfig.search.origin = "BSB";
   mockConfig.search.destinations = ["GRU"];
   mockConfig.search.dateRangeDays = 1;
   mockConfig.search.tripType = "one-way";
@@ -392,5 +395,64 @@ describe("runTracker", () => {
 
     expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
     expect((mockSendFlightAlert.mock.calls[0][0] as Flight).priceBRL).toBe(180);
+  });
+
+  // ── Múltiplas origens (ORIGINS=BSB,GRU) ───────────────────────────────────
+
+  it("com múltiplas origens, busca todas as combinações origem→destino, pulando origem===destino", async () => {
+    mockConfig.search.origins = ["BSB", "GRU"];
+    mockConfig.search.origin = "BSB";
+    mockConfig.search.destinations = ["GRU", "SDL"];
+    mockSearchWithApify.mockResolvedValue([makeFlight(250)]);
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    // BSB→GRU, BSB→SDL, GRU→SDL (GRU→GRU é pulado)
+    expect(mockSearchWithApify).toHaveBeenCalledTimes(3);
+    expect(mockSearchWithApify).toHaveBeenCalledWith(
+      expect.objectContaining({ origin: "BSB", destination: "GRU" })
+    );
+    expect(mockSearchWithApify).toHaveBeenCalledWith(
+      expect.objectContaining({ origin: "BSB", destination: "SDL" })
+    );
+    expect(mockSearchWithApify).toHaveBeenCalledWith(
+      expect.objectContaining({ origin: "GRU", destination: "SDL" })
+    );
+    expect(mockSearchWithApify).not.toHaveBeenCalledWith(
+      expect.objectContaining({ origin: "GRU", destination: "GRU" })
+    );
+  });
+
+  it("com ORIGINS=BSB,GRU e DESTINATIONS=GRU,BSB varre os dois sentidos (ida e volta)", async () => {
+    mockConfig.search.origins = ["BSB", "GRU"];
+    mockConfig.search.origin = "BSB";
+    mockConfig.search.destinations = ["GRU", "BSB"];
+    mockSearchWithApify.mockResolvedValue([makeFlight(250)]);
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    // BSB→GRU e GRU→BSB (BSB→BSB e GRU→GRU são pulados)
+    expect(mockSearchWithApify).toHaveBeenCalledTimes(2);
+    expect(mockSearchWithApify).toHaveBeenCalledWith(
+      expect.objectContaining({ origin: "BSB", destination: "GRU" })
+    );
+    expect(mockSearchWithApify).toHaveBeenCalledWith(
+      expect.objectContaining({ origin: "GRU", destination: "BSB" })
+    );
+  });
+
+  it("com origem única (ORIGIN=BSB), comportamento original é preservado", async () => {
+    // mockConfig.search.origins já é ["BSB"] por padrão no beforeEach
+    mockSearchWithApify.mockResolvedValue([makeFlight(250)]);
+
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+
+    expect(mockSearchWithApify).toHaveBeenCalledTimes(1);
+    expect(mockSearchWithApify).toHaveBeenCalledWith(
+      expect.objectContaining({ origin: "BSB", destination: "GRU" })
+    );
   });
 });

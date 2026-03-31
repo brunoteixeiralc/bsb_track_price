@@ -36,7 +36,19 @@ export const config = {
     chatId: required("TELEGRAM_CHAT_ID"),
   },
   search: {
-    origin: process.env.ORIGIN ?? "BSB",
+    // Suporte a múltiplas origens via ORIGINS=BSB,GRU (ou ORIGIN=BSB para retrocompatibilidade).
+    // Se ORIGINS estiver definido, tem prioridade; caso contrário usa ORIGIN.
+    origins: (() => {
+      const raw = process.env.ORIGINS ?? process.env.ORIGIN;
+      if (!raw) return ["BSB"];
+      return raw.split(",").map((s) => s.trim()).filter(Boolean);
+    })(),
+    // Alias de conveniência para a primeira origem (retrocompatibilidade com webhook e outros usos).
+    origin: (() => {
+      const raw = process.env.ORIGINS ?? process.env.ORIGIN;
+      if (!raw) return "BSB";
+      return (raw.split(",")[0] ?? "BSB").trim();
+    })(),
     destinations: (() => {
       const raw = process.env.DESTINATIONS ?? process.env.DESTINATION;
       if (!raw) throw new Error("Missing required env var: DESTINATIONS");

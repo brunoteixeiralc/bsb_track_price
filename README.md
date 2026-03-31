@@ -5,6 +5,7 @@ Monitora passagens aéreas saindo de Brasília (BSB) e envia alertas no Telegram
 ## Funcionalidades
 
 - 🔍 **Múltiplos destinos** — busca BSB→GRU, BSB→SDL, BSB→FOR de uma vez
+- 🔁 **Múltiplas origens** — `ORIGINS=BSB,GRU` varre todas as combinações nos dois sentidos (útil para quem viajou e quer monitorar a volta)
 - 🗓️ **Intervalo de datas** — varre N dias a partir da data de saída e alerta a data mais barata
 - ✈️ **Somente ida ou ida e volta** — configurável por variável de ambiente
 - 👥 **Configuração de passageiros** — suporte a múltiplos adultos e crianças
@@ -81,7 +82,8 @@ npm test -- --coverage  # testes + relatório de cobertura
 
 | Variável | Padrão | Descrição |
 |---|---|---|
-| `ORIGIN` | `BSB` | Código IATA de origem |
+| `ORIGIN` | `BSB` | Código IATA de origem (única) |
+| `ORIGINS` | — | Múltiplas origens separadas por vírgula (ex: `BSB,GRU`). Tem prioridade sobre `ORIGIN`. Varre todas as combinações origem→destino nos dois sentidos, ignorando pares onde origem = destino. |
 | `TRIP_TYPE` | `one-way` | Tipo de viagem: `one-way` ou `round-trip` |
 | `RETURN_DATE` | — | Data de volta `YYYY-MM-DD` (**obrigatório** se `TRIP_TYPE=round-trip`) |
 | `DATE_RANGE_DAYS` | `1` | Quantos dias varrer a partir de `DEPARTURE_DATE` |
@@ -133,7 +135,8 @@ Vá em **Settings → Secrets and variables → Actions** e adicione:
 | `RETURN_DATE` | obrigatório se `TRIP_TYPE=round-trip` |
 | `DATE_RANGE_DAYS` | opcional |
 | `MAX_PRICE_BRL` | opcional |
-| `ORIGIN` | opcional |
+| `ORIGIN` | opcional (padrão `BSB`) |
+| `ORIGINS` | opcional — múltiplas origens (ex: `BSB,GRU`) |
 | `APIFY_ACTOR_ID` | opcional |
 | `RAPIDAPI_HOST` | opcional |
 

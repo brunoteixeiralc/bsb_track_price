@@ -10,19 +10,24 @@ import { generateDateRange } from "../utils/dates";
 export async function runTracker(): Promise<void> {
   const dates = generateDateRange(config.search.departureDate, config.search.dateRangeDays);
 
-  for (const destination of config.search.destinations) {
-    const params: SearchParams = {
-      origin: config.search.origin,
-      destination,
-      departureDate: dates[0],
-      returnDate: config.search.returnDate,
-      tripType: config.search.tripType,
-    };
+  for (const origin of config.search.origins) {
+    for (const destination of config.search.destinations) {
+      // Ignora rota origem→origem (não faz sentido buscar voo para o mesmo aeroporto)
+      if (origin === destination) continue;
 
-    if (dates.length === 1) {
-      await searchAndNotify(params);
-    } else {
-      await searchDateRange(params, dates);
+      const params: SearchParams = {
+        origin,
+        destination,
+        departureDate: dates[0],
+        returnDate: config.search.returnDate,
+        tripType: config.search.tripType,
+      };
+
+      if (dates.length === 1) {
+        await searchAndNotify(params);
+      } else {
+        await searchDateRange(params, dates);
+      }
     }
   }
 }
