@@ -1,7 +1,6 @@
 import axios from "axios";
 import fs from "fs";
 import path from "path";
-import { config } from "../config";
 
 const RSS_URL = "https://passageirodeprimeira.com/categorias/noticias/feed/";
 const SEEN_DB_PATH = path.join(process.cwd(), "data", "news-seen.json");
@@ -129,12 +128,21 @@ export function buildNewsMessage(item: RssItem): string {
   return lines.join("\n");
 }
 
+function getTelegramConfig(): { botToken: string; chatId: string } {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!botToken) throw new Error("Missing required env var: TELEGRAM_BOT_TOKEN");
+  if (!chatId) throw new Error("Missing required env var: TELEGRAM_CHAT_ID");
+  return { botToken, chatId };
+}
+
 export async function sendNewsAlert(item: RssItem): Promise<void> {
-  const BASE_URL = `https://api.telegram.org/bot${config.telegram.botToken}`;
+  const { botToken, chatId } = getTelegramConfig();
+  const BASE_URL = `https://api.telegram.org/bot${botToken}`;
   const text = buildNewsMessage(item);
 
   await axios.post(`${BASE_URL}/sendMessage`, {
-    chat_id: config.telegram.chatId,
+    chat_id: chatId,
     text,
     parse_mode: "Markdown",
     disable_web_page_preview: false,

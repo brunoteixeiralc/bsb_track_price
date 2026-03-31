@@ -3,12 +3,9 @@ import MockAdapter from "axios-mock-adapter";
 import fs from "fs";
 import { parseRssItems, isMilhaRelated, buildNewsMessage, loadSeenGuids, saveSeenGuids, runNewsTracker, RssItem } from "../services/news";
 
-jest.mock("../config", () => ({
-  config: {
-    telegram: { botToken: "test-token", chatId: "123456" },
-    // news.ts não usa os outros campos de config
-  },
-}));
+// news.ts lê diretamente das env vars, sem usar config.ts
+process.env.TELEGRAM_BOT_TOKEN = "test-token";
+process.env.TELEGRAM_CHAT_ID = "123456";
 
 const mock = new MockAdapter(axios);
 
