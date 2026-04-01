@@ -9300,5 +9300,14 @@
     "totalFound": 0,
     "cheapestPriceBRL": null,
     "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T12:45:59.534Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-01",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
   }
 ]

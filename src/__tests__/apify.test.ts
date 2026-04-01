@@ -346,12 +346,12 @@ describe("searchWithApify", () => {
       expect(mock.history.post).toHaveLength(3); // tentou os 3 tokens
     });
 
-    it("rotaciona quando o primeiro retorna 403 com mensagem de crédito", async () => {
+    it("rotaciona quando o primeiro retorna 403 (qualquer body)", async () => {
       const { config } = await import("../config");
       (config.apify as any).tokens = ["token-sem-credito", "token-valido"];
 
       mock.onPost(/run-sync-get-dataset-items/)
-        .replyOnce(403, { error: "insufficient credit balance" })
+        .replyOnce(403, { error: "Forbidden" })
         .onPost(/run-sync-get-dataset-items/)
         .replyOnce(200, makeDatasetItem([{ price: 700 }]));
 

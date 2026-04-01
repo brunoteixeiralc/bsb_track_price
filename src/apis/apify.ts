@@ -34,12 +34,8 @@ function toIataCodes(names: string[]): string {
 function isCreditsError(err: unknown): boolean {
   if (!isAxiosError(err)) return false;
   const status = err.response?.status;
-  if (status === 402) return true;
-  if (status === 403) {
-    const body = JSON.stringify(err.response?.data ?? "").toLowerCase();
-    return body.includes("credit") || body.includes("subscription") || body.includes("plan");
-  }
-  return false;
+  // 402 = sem créditos; 403 = token sem permissão/créditos — ambos devem rotacionar
+  return status === 402 || status === 403;
 }
 
 interface ApifyFlightLeg {

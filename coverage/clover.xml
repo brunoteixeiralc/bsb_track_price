@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1775046797194" clover="3.2.0">
-  <project timestamp="1775046797194" name="All files">
-    <metrics statements="705" coveredstatements="653" conditionals="297" coveredconditionals="242" methods="92" coveredmethods="80" elements="1094" coveredelements="975" complexity="0" loc="705" ncloc="705" packages="3" files="13" classes="13"/>
+<coverage generated="1775047529835" clover="3.2.0">
+  <project timestamp="1775047529835" name="All files">
+    <metrics statements="701" coveredstatements="649" conditionals="292" coveredconditionals="240" methods="92" coveredmethods="80" elements="1085" coveredelements="969" complexity="0" loc="701" ncloc="701" packages="3" files="13" classes="13"/>
     <package name="apis">
-      <metrics statements="103" coveredstatements="98" conditionals="86" coveredconditionals="67" methods="6" coveredmethods="6"/>
+      <metrics statements="99" coveredstatements="94" conditionals="81" coveredconditionals="65" methods="6" coveredmethods="6"/>
       <file name="apify.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/apis/apify.ts">
-        <metrics statements="68" coveredstatements="67" conditionals="58" coveredconditionals="48" methods="5" coveredmethods="5"/>
+        <metrics statements="64" coveredstatements="63" conditionals="53" coveredconditionals="46" methods="5" coveredmethods="5"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="4" count="1" type="stmt"/>
@@ -15,65 +15,61 @@
         <line num="25" count="5" type="stmt"/>
         <line num="35" count="7" type="cond" truecount="0" falsecount="1"/>
         <line num="36" count="7" type="stmt"/>
-        <line num="37" count="7" type="cond" truecount="1" falsecount="0"/>
-        <line num="38" count="3" type="cond" truecount="1" falsecount="0"/>
-        <line num="39" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="40" count="1" type="cond" truecount="1" falsecount="2"/>
-        <line num="42" count="2" type="stmt"/>
-        <line num="74" count="1" type="stmt"/>
+        <line num="38" count="7" type="cond" truecount="2" falsecount="0"/>
+        <line num="70" count="1" type="stmt"/>
+        <line num="71" count="23" type="stmt"/>
+        <line num="73" count="23" type="stmt"/>
+        <line num="74" count="23" type="stmt"/>
         <line num="75" count="23" type="stmt"/>
         <line num="77" count="23" type="stmt"/>
-        <line num="78" count="23" type="stmt"/>
-        <line num="79" count="23" type="stmt"/>
-        <line num="81" count="23" type="stmt"/>
-        <line num="105" count="23" type="stmt"/>
-        <line num="106" count="27" type="stmt"/>
-        <line num="107" count="27" type="stmt"/>
-        <line num="108" count="27" type="stmt"/>
-        <line num="117" count="20" type="stmt"/>
-        <line num="120" count="20" type="stmt"/>
-        <line num="122" count="20" type="stmt"/>
-        <line num="124" count="14" type="stmt"/>
-        <line num="127" count="14" type="cond" truecount="1" falsecount="0"/>
-        <line num="134" count="3" type="stmt"/>
-        <line num="135" count="3" type="cond" truecount="4" falsecount="0"/>
-        <line num="136" count="2" type="stmt"/>
-        <line num="145" count="14" type="stmt"/>
-        <line num="150" count="14" type="stmt"/>
-        <line num="151" count="16" type="cond" truecount="1" falsecount="0"/>
-        <line num="153" count="15" type="cond" truecount="1" falsecount="1"/>
+        <line num="101" count="23" type="stmt"/>
+        <line num="102" count="27" type="stmt"/>
+        <line num="103" count="27" type="stmt"/>
+        <line num="104" count="27" type="stmt"/>
+        <line num="113" count="20" type="stmt"/>
+        <line num="116" count="20" type="stmt"/>
+        <line num="118" count="20" type="stmt"/>
+        <line num="120" count="14" type="stmt"/>
+        <line num="123" count="14" type="cond" truecount="1" falsecount="0"/>
+        <line num="130" count="3" type="stmt"/>
+        <line num="131" count="3" type="cond" truecount="4" falsecount="0"/>
+        <line num="132" count="2" type="stmt"/>
+        <line num="141" count="14" type="stmt"/>
+        <line num="146" count="14" type="stmt"/>
+        <line num="147" count="16" type="cond" truecount="1" falsecount="0"/>
+        <line num="149" count="15" type="cond" truecount="1" falsecount="1"/>
+        <line num="150" count="15" type="stmt"/>
+        <line num="151" count="15" type="stmt"/>
+        <line num="152" count="15" type="cond" truecount="2" falsecount="0"/>
+        <line num="153" count="15" type="stmt"/>
         <line num="154" count="15" type="stmt"/>
         <line num="155" count="15" type="stmt"/>
-        <line num="156" count="15" type="cond" truecount="2" falsecount="0"/>
-        <line num="157" count="15" type="stmt"/>
-        <line num="158" count="15" type="stmt"/>
-        <line num="159" count="15" type="stmt"/>
-        <line num="160" count="15" type="stmt"/>
-        <line num="161" count="15" type="cond" truecount="2" falsecount="0"/>
-        <line num="162" count="15" type="cond" truecount="3" falsecount="1"/>
-        <line num="165" count="15" type="cond" truecount="1" falsecount="1"/>
-        <line num="169" count="15" type="stmt"/>
-        <line num="170" count="15" type="stmt"/>
-        <line num="171" count="15" type="cond" truecount="3" falsecount="0"/>
-        <line num="172" count="10" type="stmt"/>
-        <line num="173" count="10" type="stmt"/>
-        <line num="174" count="10" type="cond" truecount="3" falsecount="0"/>
-        <line num="175" count="10" type="stmt"/>
-        <line num="179" count="15" type="cond" truecount="3" falsecount="0"/>
-        <line num="180" count="5" type="cond" truecount="2" falsecount="0"/>
-        <line num="181" count="5" type="cond" truecount="0" falsecount="1"/>
-        <line num="185" count="15" type="stmt"/>
-        <line num="188" count="15" type="stmt"/>
-        <line num="190" count="15" type="stmt"/>
-        <line num="212" count="20" type="stmt"/>
-        <line num="213" count="20" type="stmt"/>
-        <line num="216" count="7" type="stmt"/>
-        <line num="217" count="7" type="cond" truecount="3" falsecount="0"/>
-        <line num="218" count="4" type="stmt"/>
-        <line num="219" count="4" type="stmt"/>
-        <line num="221" count="3" type="stmt"/>
-        <line num="222" count="3" type="stmt"/>
-        <line num="228" count="0" type="stmt"/>
+        <line num="156" count="15" type="stmt"/>
+        <line num="157" count="15" type="cond" truecount="2" falsecount="0"/>
+        <line num="158" count="15" type="cond" truecount="3" falsecount="1"/>
+        <line num="161" count="15" type="cond" truecount="1" falsecount="1"/>
+        <line num="165" count="15" type="stmt"/>
+        <line num="166" count="15" type="stmt"/>
+        <line num="167" count="15" type="cond" truecount="3" falsecount="0"/>
+        <line num="168" count="10" type="stmt"/>
+        <line num="169" count="10" type="stmt"/>
+        <line num="170" count="10" type="cond" truecount="3" falsecount="0"/>
+        <line num="171" count="10" type="stmt"/>
+        <line num="175" count="15" type="cond" truecount="3" falsecount="0"/>
+        <line num="176" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="177" count="5" type="cond" truecount="0" falsecount="1"/>
+        <line num="181" count="15" type="stmt"/>
+        <line num="184" count="15" type="stmt"/>
+        <line num="186" count="15" type="stmt"/>
+        <line num="208" count="20" type="stmt"/>
+        <line num="209" count="20" type="stmt"/>
+        <line num="212" count="7" type="stmt"/>
+        <line num="213" count="7" type="cond" truecount="3" falsecount="0"/>
+        <line num="214" count="4" type="stmt"/>
+        <line num="215" count="4" type="stmt"/>
+        <line num="217" count="3" type="stmt"/>
+        <line num="218" count="3" type="stmt"/>
+        <line num="224" count="0" type="stmt"/>
       </file>
       <file name="rapidapi.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/apis/rapidapi.ts">
         <metrics statements="35" coveredstatements="31" conditionals="28" coveredconditionals="19" methods="1" coveredmethods="1"/>
