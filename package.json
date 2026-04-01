@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "ts-node src/index.ts",
     "webhook": "ts-node src/webhook.ts",
+    "news": "ts-node src/index-news.ts",
+    "offers": "ts-node src/index-offers.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "start:webhook": "node dist/webhook.js",

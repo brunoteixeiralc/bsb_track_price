@@ -6,6 +6,7 @@ Monitors airfare departing from Brasília (BSB) and sends Telegram alerts when p
 
 - 🔍 **Multiple Destinations** — Search BSB→GRU, BSB→SDL, BSB→FOR all at once.
 - 🗓️ **Date Range** — Scans N days from the departure date and alerts the cheapest date found.
+- 🔁 **Multiple Origins** — `ORIGINS=BSB,GRU` scans all combinations in both directions (useful for return trip monitoring).
 - ✈️ **One-way or Round-trip** — Configurable via environment variables.
 - 👥 **Passenger Configuration** — Support for multiple adults and children.
 - 🔄 **Retry with Backoff & Token Rotation** — Retries Apify up to 3 times and rotates between up to 5 tokens if credits run out.
@@ -15,6 +16,8 @@ Monitors airfare departing from Brasília (BSB) and sends Telegram alerts when p
 - 🛡️ **Smart Anti-spam** — Only sends an alert if the price drops ≥ 5% compared to the last search.
 - ⚙️ **Advanced Filters** — Filter by airlines, maximum stops, and flight duration.
 - 💵 **Dynamic Conversion** — Converts prices from USD/other currencies to BRL in real-time via API.
+- 📰 **Miles News** — Monitors news feeds (e.g., Passageiro de Primeira) and alerts about miles/points promotions.
+- 🏷️ **Daily Offers** — Searches for flight and travel package deals in specialized feeds.
 - 💚 **Daily Health Check** — Sends a Telegram message confirming the tracker ran successfully.
 - 🧪 **Tests with Coverage** — CI blocks PRs with coverage below 80%.
 
@@ -82,7 +85,8 @@ npm test -- --coverage  # Tests + coverage report
 
 | Variable | Default | Description |
 |---|---|---|
-| `ORIGIN` | `BSB` | Origin IATA code |
+| `ORIGIN` | `BSB` | Origin IATA code (single) |
+| `ORIGINS` | — | Multiple origins separated by comma (e.g., `BSB,GRU`). Takes priority over `ORIGIN`. Scans all origin→destination combinations in both directions. |
 | `TRIP_TYPE` | `one-way` | Trip type: `one-way` or `round-trip` |
 | `RETURN_DATE` | — | Return date `YYYY-MM-DD` (**mandatory** if `TRIP_TYPE=round-trip`) |
 | `DATE_RANGE_DAYS` | `1` | Number of days to scan starting from `DEPARTURE_DATE` |
@@ -134,7 +138,8 @@ Go to **Settings → Secrets and variables → Actions** and add:
 | `RETURN_DATE` | Mandatory if `TRIP_TYPE=round-trip` |
 | `DATE_RANGE_DAYS` | Optional |
 | `MAX_PRICE_BRL` | Optional |
-| `ORIGIN` | Optional |
+| `ORIGIN` | Optional (default `BSB`) |
+| `ORIGINS` | Optional — multiple origins (e.g., `BSB,GRU`) |
 | `APIFY_ACTOR_ID` | Optional |
 | `RAPIDAPI_HOST` | Optional |
 
@@ -144,6 +149,8 @@ Go to **Settings → Secrets and variables → Actions** and add:
 |---|---|---|
 | `ci.yml` | Push and Pull Request | Runs tests + coverage (blocks if < 80%) |
 | `check-flights.yml` | Cron 08:00/20:00 BRT + manual | Scans flights, sends alerts, commits history |
+| `check-news.yml` | Cron 3x daily | Monitors miles and points news |
+| `check-offers.yml` | Cron every 2 hours | Scans for new travel offers |
 
 ---
 
@@ -152,7 +159,9 @@ Go to **Settings → Secrets and variables → Actions** and add:
 ```
 bsb-price-track/
 ├── src/
-│   ├── index.ts                  # Entry point
+│   ├── index.ts                  # Entry point (Flight Tracker)
+│   ├── index-news.ts             # Entry point (News/Miles)
+│   ├── index-offers.ts           # Entry point (Offers)
 │   ├── config.ts                 # Env var reading and validation
 │   ├── types.ts                  # TypeScript types (Flight, SearchParams, etc.)
 │   ├── apis/
@@ -160,6 +169,7 @@ bsb-price-track/
 │   │   └── rapidapi.ts           # RapidAPI/Skyscanner integration (fallback)
 │   ├── services/
 │   │   ├── tracker.ts            # Main logic: search, retry, alerts
+│   │   ├── news.ts               # RSS fetch and keyword filter logic (Miles/News)
 │   │   ├── telegram.ts           # Telegram message sending
 │   │   ├── currency.ts           # Currency conversion to BRL
 │   │   ├── history.ts            # history.json read/write
@@ -172,11 +182,15 @@ bsb-price-track/
 │   └── __tests__/                # Unit tests (Jest)
 ├── data/
 │   ├── history.json              # Search history (auto-committed by CI)
-│   └── health.json               # Daily health check control
+│   ├── health.json               # Daily health check control
+│   ├── news-seen.json            # Database of already sent news
+│   └── offers-seen.json          # Database of already sent offers
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                # CI — tests on push/PR
-│       └── check-flights.yml     # Tracker — cron 2x daily
+│       ├── check-flights.yml     # Flight Tracker — cron 2x daily
+│       ├── check-news.yml        # News Tracker — cron 3x daily
+│       └── check-offers.yml      # Offers Tracker — cron every 2h
 ├── .env.example
 ├── package.json
 ├── tsconfig.json
@@ -319,7 +333,9 @@ For each destination in DESTINATIONS:
 ### Useful Commands
 
 ```bash
-npm run dev          # Run the tracker once (ts-node)
+npm run dev          # Run the flight tracker once
+npm run news         # Run the miles news tracker
+npm run offers       # Run the travel offers tracker
 npm run webhook      # Start the interactive bot via webhook
 npm test             # Run all tests
 npm test -- --coverage  # Tests + coverage report

@@ -16,6 +16,8 @@ Monitora passagens aéreas saindo de Brasília (BSB) e envia alertas no Telegram
 - 🛡️ **Anti-spam inteligente** — só envia alerta se o preço cair ≥ 5% em relação à última busca
 - ⚙️ **Filtros Avançados** — filtre por companhias aéreas, máximo de escalas e duração do voo
 - 💵 **Conversão Dinâmica** — converte preços de USD/outras moedas para BRL em tempo real via API
+- 📰 **Notícias de Milhas** — monitora feeds de notícias (ex: Passageiro de Primeira) e alerta sobre promoções de milhas
+- 🏷️ **Ofertas do Dia** — busca ofertas de passagens e pacotes em feeds especializados
 - 💚 **Health check diário** — envia uma mensagem no Telegram confirmando que o tracker rodou
 - 🧪 **Testes com cobertura** — CI bloqueia PRs com cobertura abaixo de 80%
 
@@ -146,6 +148,8 @@ Vá em **Settings → Secrets and variables → Actions** e adicione:
 |---|---|---|
 | `ci.yml` | Push e Pull Request | Roda testes + coverage (bloqueia se < 80%) |
 | `check-flights.yml` | Cron 08h/20h BRT + manual | Busca voos, envia alertas, commita histórico |
+| `check-news.yml` | Cron 3x ao dia | Monitora notícias de milhas e pontos |
+| `check-offers.yml` | Cron a cada 2 horas | Busca novas ofertas de passagens/viagens |
 
 ---
 
@@ -154,7 +158,9 @@ Vá em **Settings → Secrets and variables → Actions** e adicione:
 ```
 bsb-price-track/
 ├── src/
-│   ├── index.ts                  # Entry point
+│   ├── index.ts                  # Entry point (Flight Tracker)
+│   ├── index-news.ts             # Entry point (News/Miles)
+│   ├── index-offers.ts           # Entry point (Offers)
 │   ├── config.ts                 # Leitura e validação de env vars
 │   ├── types.ts                  # Tipos TypeScript (Flight, SearchParams, etc.)
 │   ├── apis/
@@ -162,6 +168,7 @@ bsb-price-track/
 │   │   └── rapidapi.ts           # Integração RapidAPI/Skyscanner (fallback)
 │   ├── services/
 │   │   ├── tracker.ts            # Lógica principal: busca, retry, alertas
+│   │   ├── news.ts               # Lógica de fetch e filtro de RSS (Milhas/Notícias)
 │   │   ├── telegram.ts           # Envio de mensagens no Telegram
 │   │   ├── currency.ts           # Conversão de moeda para BRL
 │   │   ├── history.ts            # Leitura/escrita de data/history.json
@@ -174,11 +181,15 @@ bsb-price-track/
 │   └── __tests__/                # Testes unitários (Jest)
 ├── data/
 │   ├── history.json              # Histórico de buscas (auto-commitado pelo CI)
-│   └── health.json               # Controle de health check diário
+│   ├── health.json               # Controle de health check diário
+│   ├── news-seen.json            # Banco de notícias já enviadas
+│   └── offers-seen.json          # Banco de ofertas já enviadas
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                # CI — testes em todo push/PR
-│       └── check-flights.yml     # Tracker — cron 2x ao dia
+│       ├── check-flights.yml     # Tracker de voos — cron 2x ao dia
+│       ├── check-news.yml        # Tracker de notícias — cron 3x ao dia
+│       └── check-offers.yml      # Tracker de ofertas — cron a cada 2h
 ├── .env.example
 ├── package.json
 └── tsconfig.json
@@ -318,7 +329,9 @@ Para cada destino em DESTINATIONS:
 ### Comandos úteis
 
 ```bash
-npm run dev          # Executa o tracker uma vez (ts-node)
+npm run dev          # Executa o tracker de voos uma vez
+npm run news         # Executa o tracker de notícias de milhas
+npm run offers       # Executa o tracker de ofertas
 npm run webhook      # Inicia o bot interativo via webhook
 npm test             # Roda todos os testes
 npm test -- --coverage  # Testes + relatório de cobertura
