@@ -25,6 +25,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Show configuration
+        run: |
+          echo "===== CONFIGURAÇÃO ====="
+          echo "Feed: https://queroviajarnafaixa.com.br/category/ofertas/feed/"
+          echo "TELEGRAM: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && 'definido ✓' || 'NÃO definido ✗' }}"
+          echo "========================"
+
       - name: Run offers tracker
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

@@ -28,8 +28,32 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # ── Resumo de configuração (visível nos logs) ──────────────────────────
+      # Secrets (tokens/chaves) não aparecem aqui por segurança.
+      # Para saber quais tokens estão cadastrados, veja:
+      #   GitHub → Settings → Secrets and variables → Actions → Secrets
+      - name: Show configuration
+        run: |
+          echo "===== CONFIGURAÇÃO ====="
+          echo "Rota:           ${{ vars.ORIGINS || vars.ORIGIN }} → ${{ vars.DESTINATIONS }}"
+          echo "Tipo de viagem: ${{ vars.TRIP_TYPE || 'one-way' }}"
+          echo "Preço máximo:   R$ ${{ vars.MAX_PRICE_BRL }}"
+          echo "Intervalo:      ${{ vars.DATE_RANGE_DAYS || '1' }} dia(s)"
+          echo "Max escalas:    ${{ vars.MAX_STOPS || 'sem limite' }}"
+          echo "Adults/Children: ${{ vars.ADULTS || '1' }}/${{ vars.CHILDREN || '0' }}"
+          echo "Actor ID:       ${{ vars.APIFY_ACTOR_ID || 'padrão' }}"
+          echo ""
+          echo "Secrets configurados:"
+          echo "  APIFY_API_TOKEN_1: ${{ secrets.APIFY_API_TOKEN_1 != '' && 'definido ✓' || 'NÃO definido ✗' }}"
+          echo "  APIFY_API_TOKEN_2: ${{ secrets.APIFY_API_TOKEN_2 != '' && 'definido ✓' || 'não definido' }}"
+          echo "  APIFY_API_TOKEN_3: ${{ secrets.APIFY_API_TOKEN_3 != '' && 'definido ✓' || 'não definido' }}"
+          echo "  RAPIDAPI_KEY:      ${{ secrets.RAPIDAPI_KEY != '' && 'definido ✓' || 'NÃO definido ✗' }}"
+          echo "  TELEGRAM:          ${{ secrets.TELEGRAM_BOT_TOKEN != '' && 'definido ✓' || 'NÃO definido ✗' }}"
+          echo "========================"
+
       - name: Run flight tracker
         env:
+          # ── Secrets (sensíveis — nunca visíveis nos logs) ──────────────────
           APIFY_API_TOKEN_1: ${{ secrets.APIFY_API_TOKEN_1 }}
           APIFY_API_TOKEN_2: ${{ secrets.APIFY_API_TOKEN_2 }}
           APIFY_API_TOKEN_3: ${{ secrets.APIFY_API_TOKEN_3 }}
@@ -39,15 +63,22 @@ jobs:
           RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          ORIGIN: ${{ secrets.ORIGIN }}
-          DESTINATIONS: ${{ secrets.DESTINATIONS }}
-          DEPARTURE_DATE: ${{ secrets.DEPARTURE_DATE }}
-          DATE_RANGE_DAYS: ${{ secrets.DATE_RANGE_DAYS }}
-          TRIP_TYPE: ${{ secrets.TRIP_TYPE }}
-          RETURN_DATE: ${{ secrets.RETURN_DATE }}
-          MAX_PRICE_BRL: ${{ secrets.MAX_PRICE_BRL }}
-          APIFY_ACTOR_ID: ${{ secrets.APIFY_ACTOR_ID }}
-          RAPIDAPI_HOST: ${{ secrets.RAPIDAPI_HOST }}
+          # ── Variables (configuração — visível em Settings > Variables) ─────
+          ORIGINS: ${{ vars.ORIGINS }}
+          ORIGIN: ${{ vars.ORIGIN }}
+          DESTINATIONS: ${{ vars.DESTINATIONS }}
+          DEPARTURE_DATE: ${{ vars.DEPARTURE_DATE }}
+          DATE_RANGE_DAYS: ${{ vars.DATE_RANGE_DAYS }}
+          TRIP_TYPE: ${{ vars.TRIP_TYPE }}
+          RETURN_DATE: ${{ vars.RETURN_DATE }}
+          MAX_PRICE_BRL: ${{ vars.MAX_PRICE_BRL }}
+          ADULTS: ${{ vars.ADULTS }}
+          CHILDREN: ${{ vars.CHILDREN }}
+          MAX_STOPS: ${{ vars.MAX_STOPS }}
+          AIRLINES_WHITELIST: ${{ vars.AIRLINES_WHITELIST }}
+          MAX_DURATION_HOURS: ${{ vars.MAX_DURATION_HOURS }}
+          APIFY_ACTOR_ID: ${{ vars.APIFY_ACTOR_ID }}
+          RAPIDAPI_HOST: ${{ vars.RAPIDAPI_HOST }}
         run: npx ts-node src/index.ts
 
       - name: Commit price history
