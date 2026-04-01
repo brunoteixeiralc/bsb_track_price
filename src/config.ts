@@ -54,7 +54,7 @@ export const config = {
       if (!raw) throw new Error("Missing required env var: DESTINATIONS");
       return raw.split(",").map((s) => s.trim()).filter(Boolean);
     })(),
-    departureDate: required("DEPARTURE_DATE"),
+    departureDate: process.env.DEPARTURE_DATE ?? new Date().toISOString().split("T")[0],
     dateRangeDays: Number(process.env.DATE_RANGE_DAYS ?? "1"),
     adults: Number(process.env.ADULTS ?? "1"),
     children: Number(process.env.CHILDREN ?? "0"),
