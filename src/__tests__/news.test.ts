@@ -1,7 +1,7 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import fs from "fs";
-import { parseRssItems, isMilhaRelated, buildNewsMessage, loadSeenGuids, saveSeenGuids, runNewsTracker, RssItem } from "../services/news";
+import { parseRssItems, isMilhaRelated, isKeywordRelated, buildNewsMessage, loadSeenGuids, saveSeenGuids, runNewsTracker, trackRssFeed, RssItem } from "../services/news";
 
 // news.ts lê diretamente das env vars, sem usar config.ts
 process.env.TELEGRAM_BOT_TOKEN = "test-token";
@@ -170,12 +170,12 @@ describe("buildNewsMessage", () => {
 describe("loadSeenGuids", () => {
   it("retorna Set vazio quando arquivo não existe", () => {
     jest.spyOn(fs, "readFileSync").mockImplementation(() => { throw new Error("ENOENT"); });
-    expect(loadSeenGuids().size).toBe(0);
+    expect(loadSeenGuids("/tmp/fake.json").size).toBe(0);
   });
 
   it("carrega GUIDs do arquivo JSON", () => {
     jest.spyOn(fs, "readFileSync").mockReturnValue(JSON.stringify(["guid-1", "guid-2"]));
-    const set = loadSeenGuids();
+    const set = loadSeenGuids("/tmp/fake.json");
     expect(set.has("guid-1")).toBe(true);
     expect(set.has("guid-2")).toBe(true);
   });
@@ -186,7 +186,7 @@ describe("saveSeenGuids", () => {
     const mkdirSpy = jest.spyOn(fs, "mkdirSync").mockReturnValue(undefined as any);
     const writeSpy = jest.spyOn(fs, "writeFileSync").mockReturnValue();
     const guids = new Set(["guid-a", "guid-b"]);
-    saveSeenGuids(guids);
+    saveSeenGuids(guids, "/tmp/fake.json");
     expect(writeSpy).toHaveBeenCalledTimes(1);
     const written = JSON.parse(writeSpy.mock.calls[0][1] as string);
     expect(written).toContain("guid-a");
@@ -198,7 +198,7 @@ describe("saveSeenGuids", () => {
     const mkdirSpy = jest.spyOn(fs, "mkdirSync").mockReturnValue(undefined as any);
     const writeSpy = jest.spyOn(fs, "writeFileSync").mockReturnValue();
     const guids = new Set(Array.from({ length: 400 }, (_, i) => `guid-${i}`));
-    saveSeenGuids(guids);
+    saveSeenGuids(guids, "/tmp/fake.json");
     const written: string[] = JSON.parse(writeSpy.mock.calls[0][1] as string);
     expect(written.length).toBe(300);
     mkdirSpy.mockRestore();
@@ -284,5 +284,124 @@ describe("runNewsTracker", () => {
     expect(writeSpy).toHaveBeenCalledTimes(1);
     const saved: string[] = JSON.parse(writeSpy.mock.calls[0][1] as string);
     expect(saved).toContain("https://passageirodeprimeira.com/smiles-bonus-100");
+  });
+});
+
+// ── isKeywordRelated ──────────────────────────────────────────────────────────
+
+describe("isKeywordRelated", () => {
+  const base: RssItem = { guid: "g", title: "", link: "https://ex.com", description: "" };
+
+  it("retorna true quando keywords está vazio (aceita tudo)", () => {
+    expect(isKeywordRelated({ ...base, title: "Qualquer coisa" }, [])).toBe(true);
+  });
+
+  it("retorna true quando título contém uma keyword", () => {
+    expect(isKeywordRelated({ ...base, title: "Oferta imperdível de passagem" }, ["oferta", "promoção"])).toBe(true);
+  });
+
+  it("retorna true quando descrição contém uma keyword", () => {
+    expect(isKeywordRelated({ ...base, title: "Notícia", description: "Promoção relâmpago disponível" }, ["promoção"])).toBe(true);
+  });
+
+  it("é case-insensitive", () => {
+    expect(isKeywordRelated({ ...base, title: "OFERTA ESPECIAL" }, ["oferta"])).toBe(true);
+  });
+
+  it("retorna false quando nenhuma keyword bate", () => {
+    expect(isKeywordRelated({ ...base, title: "Aeroporto inaugura nova ala" }, ["oferta", "promoção"])).toBe(false);
+  });
+});
+
+// ── trackRssFeed ──────────────────────────────────────────────────────────────
+
+const RSS_OFFERS = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <item>
+      <title><![CDATA[Passagem para Paris por R$ 1.800 ida e volta]]></title>
+      <link>https://queroviajarnafaixa.com.br/paris-1800</link>
+      <guid>https://queroviajarnafaixa.com.br/paris-1800</guid>
+      <description><![CDATA[<p>Encontramos uma oferta incrível para Paris saindo de São Paulo.</p>]]></description>
+      <pubDate>Tue, 01 Apr 2026 10:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title><![CDATA[Promoção: voos para Fortaleza a partir de R$ 250]]></title>
+      <link>https://queroviajarnafaixa.com.br/fortaleza-250</link>
+      <guid>https://queroviajarnafaixa.com.br/fortaleza-250</guid>
+      <description><![CDATA[<p>Aproveite os preços baixíssimos para Fortaleza neste mês.</p>]]></description>
+      <pubDate>Tue, 01 Apr 2026 09:00:00 +0000</pubDate>
+    </item>
+  </channel>
+</rss>`;
+
+describe("trackRssFeed", () => {
+  const offersConfig = {
+    rssUrl: "https://queroviajarnafaixa.com.br/category/ofertas/feed/",
+    keywords: [] as string[],
+    seenDbPath: "/tmp/offers-seen-test.json",
+    feedName: "offers",
+  };
+
+  beforeEach(() => {
+    jest.spyOn(fs, "readFileSync").mockImplementation(() => { throw new Error("ENOENT"); });
+    jest.spyOn(fs, "mkdirSync").mockReturnValue(undefined as any);
+    jest.spyOn(fs, "writeFileSync").mockReturnValue();
+  });
+
+  it("envia todos os itens quando keywords está vazio", async () => {
+    mock.onGet(/queroviajarnafaixa/).reply(200, RSS_OFFERS);
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    await trackRssFeed(offersConfig);
+
+    expect(mock.history.post).toHaveLength(2); // sem filtro = envia tudo
+  });
+
+  it("filtra por keywords quando fornecidas", async () => {
+    mock.onGet(/queroviajarnafaixa/).reply(200, RSS_OFFERS);
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    await trackRssFeed({ ...offersConfig, keywords: ["paris"] });
+
+    expect(mock.history.post).toHaveLength(1);
+    const body = JSON.parse(mock.history.post[0].data);
+    expect(body.text).toContain("Paris");
+  });
+
+  it("usa seenDbPath customizado sem conflitar com news-seen.json", async () => {
+    const writeSpy = jest.spyOn(fs, "writeFileSync").mockReturnValue();
+    mock.onGet(/queroviajarnafaixa/).reply(200, RSS_OFFERS);
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    await trackRssFeed(offersConfig);
+
+    const savedPath = writeSpy.mock.calls[0][0] as string;
+    expect(savedPath).toBe("/tmp/offers-seen-test.json");
+    expect(savedPath).not.toContain("news-seen");
+  });
+
+  it("não reenvia itens já vistos no banco customizado", async () => {
+    jest.restoreAllMocks();
+    jest.spyOn(fs, "readFileSync").mockReturnValue(
+      JSON.stringify(["https://queroviajarnafaixa.com.br/paris-1800"])
+    );
+    jest.spyOn(fs, "mkdirSync").mockReturnValue(undefined as any);
+    jest.spyOn(fs, "writeFileSync").mockReturnValue();
+
+    mock.onGet(/queroviajarnafaixa/).reply(200, RSS_OFFERS);
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    await trackRssFeed(offersConfig);
+
+    expect(mock.history.post).toHaveLength(1); // só o segundo item é novo
+    const body = JSON.parse(mock.history.post[0].data);
+    expect(body.text).toContain("Fortaleza");
+  });
+
+  it("lança erro quando o RSS está indisponível", async () => {
+    mock.onGet(/queroviajarnafaixa/).networkError();
+
+    await expect(trackRssFeed(offersConfig)).rejects.toThrow();
   });
 });

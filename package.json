@@ -20,6 +20,7 @@
       "src/**/*.ts",
       "!src/index.ts",
       "!src/index-news.ts",
+      "!src/index-offers.ts",
       "!src/webhook.ts",
       "!src/config.ts",
       "!src/**/*.d.ts"

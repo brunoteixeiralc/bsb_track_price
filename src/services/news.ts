@@ -33,6 +33,13 @@ export interface RssItem {
   pubDate?: string;
 }
 
+export interface FeedConfig {
+  rssUrl: string;
+  keywords: string[];  // vazio = aceita todos os itens sem filtro
+  seenDbPath: string;
+  feedName: string;    // prefixo usado nos logs: "news", "offers", etc.
+}
+
 // ── Parsing RSS ──────────────────────────────────────────────────────────────
 
 function extractTag(xml: string, tag: string): string {
@@ -88,18 +95,24 @@ export function parseRssItems(xml: string): RssItem[] {
   return items;
 }
 
-// ── Filtro por palavras-chave de milhas ──────────────────────────────────────
+// ── Filtro por palavras-chave ────────────────────────────────────────────────
 
-export function isMilhaRelated(item: RssItem): boolean {
+export function isKeywordRelated(item: RssItem, keywords: string[]): boolean {
+  if (keywords.length === 0) return true; // sem filtro = aceita tudo
   const haystack = `${item.title} ${item.description}`.toLowerCase();
-  return MILHA_KEYWORDS.some((kw) => haystack.includes(kw));
+  return keywords.some((kw) => haystack.includes(kw));
 }
 
-// ── Banco de dados de GUIDs já vistos (data/news-seen.json) ─────────────────
+/** @deprecated use isKeywordRelated(item, MILHA_KEYWORDS) */
+export function isMilhaRelated(item: RssItem): boolean {
+  return isKeywordRelated(item, MILHA_KEYWORDS);
+}
 
-export function loadSeenGuids(): Set<string> {
+// ── Banco de dados de GUIDs já vistos ───────────────────────────────────────
+
+export function loadSeenGuids(dbPath: string = SEEN_DB_PATH): Set<string> {
   try {
-    const raw = fs.readFileSync(SEEN_DB_PATH, "utf-8");
+    const raw = fs.readFileSync(dbPath, "utf-8");
     const arr: string[] = JSON.parse(raw);
     return new Set(arr);
   } catch {
@@ -107,10 +120,10 @@ export function loadSeenGuids(): Set<string> {
   }
 }
 
-export function saveSeenGuids(guids: Set<string>): void {
+export function saveSeenGuids(guids: Set<string>, dbPath: string = SEEN_DB_PATH): void {
   const arr = Array.from(guids).slice(-MAX_SEEN);
-  fs.mkdirSync(path.dirname(SEEN_DB_PATH), { recursive: true });
-  fs.writeFileSync(SEEN_DB_PATH, JSON.stringify(arr, null, 2));
+  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+  fs.writeFileSync(dbPath, JSON.stringify(arr, null, 2));
 }
 
 // ── Mensagem Telegram ────────────────────────────────────────────────────────
@@ -149,43 +162,55 @@ export async function sendNewsAlert(item: RssItem): Promise<void> {
   }, { timeout: TIMEOUT_MS });
 }
 
-// ── Entry point do tracker de notícias ──────────────────────────────────────
+// ── Tracker genérico (qualquer feed RSS) ────────────────────────────────────
 
-export async function runNewsTracker(): Promise<void> {
-  console.log("[news] Buscando RSS do Passageiro de Primeira...");
+export async function trackRssFeed(feedConfig: FeedConfig): Promise<void> {
+  const tag = `[${feedConfig.feedName}]`;
+  console.log(`${tag} Buscando RSS: ${feedConfig.rssUrl}`);
 
   let xml: string;
   try {
-    const res = await axios.get<string>(RSS_URL, {
+    const res = await axios.get<string>(feedConfig.rssUrl, {
       timeout: TIMEOUT_MS,
       headers: { Accept: "application/rss+xml, application/xml, text/xml" },
     });
     xml = res.data;
   } catch (err) {
-    console.error("[news] Falha ao buscar RSS:", err);
+    console.error(`${tag} Falha ao buscar RSS:`, err);
     throw err;
   }
 
   const items = parseRssItems(xml);
-  console.log(`[news] ${items.length} item(ns) no feed.`);
+  console.log(`${tag} ${items.length} item(ns) no feed.`);
 
-  const milhaItems = items.filter(isMilhaRelated);
-  console.log(`[news] ${milhaItems.length} item(ns) relacionado(s) a milhas.`);
+  const filtered = items.filter((item) => isKeywordRelated(item, feedConfig.keywords));
+  console.log(`${tag} ${filtered.length} item(ns) após filtro de keywords.`);
 
-  const seen = loadSeenGuids();
-  const newItems = milhaItems.filter((item) => !seen.has(item.guid));
-  console.log(`[news] ${newItems.length} item(ns) novo(s) para enviar.`);
+  const seen = loadSeenGuids(feedConfig.seenDbPath);
+  const newItems = filtered.filter((item) => !seen.has(item.guid));
+  console.log(`${tag} ${newItems.length} item(ns) novo(s) para enviar.`);
 
   for (const item of newItems) {
     try {
       await sendNewsAlert(item);
       seen.add(item.guid);
-      console.log(`[news] Enviado: ${item.title}`);
+      console.log(`${tag} Enviado: ${item.title}`);
     } catch (err) {
-      console.error(`[news] Falha ao enviar "${item.title}":`, err);
+      console.error(`${tag} Falha ao enviar "${item.title}":`, err);
     }
   }
 
-  saveSeenGuids(seen);
-  console.log(`[news] Concluído. ${seen.size} GUID(s) no banco.`);
+  saveSeenGuids(seen, feedConfig.seenDbPath);
+  console.log(`${tag} Concluído. ${seen.size} GUID(s) no banco.`);
+}
+
+// ── Entry point do tracker de notícias (milhas) ──────────────────────────────
+
+export async function runNewsTracker(): Promise<void> {
+  return trackRssFeed({
+    rssUrl: RSS_URL,
+    keywords: MILHA_KEYWORDS,
+    seenDbPath: SEEN_DB_PATH,
+    feedName: "news",
+  });
 }
