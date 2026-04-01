@@ -8671,5 +8671,634 @@
         "source": "apify"
       }
     ]
+  },
+  {
+    "timestamp": "2026-04-01T11:54:54.271Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-01",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:55:00.122Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-02",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:55:04.503Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-03",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:55:11.153Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-04",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:55:20.245Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-05",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:55:28.336Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-06",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:55:37.846Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-07",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:55:41.951Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-08",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:55:50.050Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-09",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:55:57.382Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-10",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:56:01.311Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-11",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:56:07.259Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-12",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:56:11.344Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-13",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:56:16.226Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-14",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:56:26.246Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-15",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:56:31.623Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-16",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:56:37.080Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-17",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:56:43.232Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-18",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:56:46.735Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-19",
+    "totalFound": 5,
+    "cheapestPriceBRL": 448.92,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 448.92,
+        "departureTime": "2026-04-19",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-19",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 448.92,
+        "departureTime": "2026-04-19",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-19",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 448.92,
+        "departureTime": "2026-04-19",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-19",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 579.42,
+        "departureTime": "2026-04-19",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-19",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 579.42,
+        "departureTime": "2026-04-19",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-19",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-04-01T11:56:51.171Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-20",
+    "totalFound": 9,
+    "cheapestPriceBRL": 448.92,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 448.92,
+        "departureTime": "2026-04-20",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-20",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 448.92,
+        "departureTime": "2026-04-20",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-20",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 448.92,
+        "departureTime": "2026-04-20",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-20",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 448.92,
+        "departureTime": "2026-04-20",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-20",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 448.92,
+        "departureTime": "2026-04-20",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-20",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 448.92,
+        "departureTime": "2026-04-20",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-20",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 579.42,
+        "departureTime": "2026-04-20",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-20",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 579.42,
+        "departureTime": "2026-04-20",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-20",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 579.42,
+        "departureTime": "2026-04-20",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+SDU+on+2026-04-20",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-04-01T11:56:55.249Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-21",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:56:59.238Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-22",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:57:03.716Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-23",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:57:07.226Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-24",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:57:12.434Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-25",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:57:17.046Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-26",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:57:22.188Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-27",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:57:27.745Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-28",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:57:31.721Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-29",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:57:35.654Z",
+    "origin": "BSB",
+    "destination": "SDU",
+    "departureDate": "2026-04-30",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:57:41.698Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-01",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:57:49.812Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-02",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:57:55.466Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-03",
+    "totalFound": 9,
+    "cheapestPriceBRL": 537.66,
+    "flights": [
+      {
+        "airline": "Gol",
+        "priceBRL": 537.66,
+        "departureTime": "2026-04-03",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-03",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-03",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-03",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-03",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-03",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-03",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-03",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 537.66,
+        "departureTime": "2026-04-03",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-03",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-03",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-03",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-03",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-03",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-03",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-03",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-03",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-03",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-04-01T11:58:02.345Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-04",
+    "totalFound": 8,
+    "cheapestPriceBRL": 537.66,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-04",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-04",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-04",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-04",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-04",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-04",
+        "source": "apify"
+      },
+      {
+        "airline": "Gol",
+        "priceBRL": 537.66,
+        "departureTime": "2026-04-04",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-04",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-04",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-04",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-04",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-04",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-04",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-04",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-04",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-04",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-04-01T11:58:08.612Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-05",
+    "totalFound": 2,
+    "cheapestPriceBRL": 542.88,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-05",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-05",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-05",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-05",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-04-01T11:58:15.769Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-06",
+    "totalFound": 2,
+    "cheapestPriceBRL": 542.88,
+    "flights": [
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-06",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-06",
+        "source": "apify"
+      },
+      {
+        "airline": "LATAM",
+        "priceBRL": 542.88,
+        "departureTime": "2026-04-06",
+        "link": "https://www.google.com/travel/flights?q=flights+from+BSB+to+GRU+on+2026-04-06",
+        "source": "apify"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-04-01T11:58:22.397Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-07",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:58:27.753Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-08",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:58:35.596Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-09",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:58:42.201Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-10",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:58:47.135Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-11",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-01T11:58:54.127Z",
+    "origin": "BSB",
+    "destination": "GRU",
+    "departureDate": "2026-04-12",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
   }
 ]
