@@ -9507,5 +9507,68 @@
     "totalFound": 0,
     "cheapestPriceBRL": null,
     "flights": []
+  },
+  {
+    "timestamp": "2026-04-03T11:40:02.250Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-01",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-03T11:40:05.151Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-02",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-03T11:40:12.346Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-03",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-03T11:40:19.572Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-04",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-03T11:40:25.088Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-05",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-03T11:40:32.808Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-06",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
+  },
+  {
+    "timestamp": "2026-04-03T11:40:40.377Z",
+    "origin": "BSB",
+    "destination": "AJU",
+    "departureDate": "2026-04-07",
+    "totalFound": 0,
+    "cheapestPriceBRL": null,
+    "flights": []
   }
 ]
