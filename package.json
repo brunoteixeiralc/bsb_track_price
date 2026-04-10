@@ -28,6 +28,7 @@
       "!src/index-offers.ts",
       "!src/webhook.ts",
       "!src/config.ts",
+      "!src/migrate-history.ts",
       "!src/**/*.d.ts"
     ],
     "coverageThreshold": {
