@@ -5,31 +5,33 @@ Monitors airfare departing from Brasília (BSB) and sends Telegram alerts when p
 ## Features
 
 - 🔍 **Multiple Destinations** — Search BSB→GRU, BSB→SDL, BSB→FOR all at once.
-- 🗓️ **Date Range** — Scans N days from the departure date and alerts the cheapest date found.
 - 🔁 **Multiple Origins** — `ORIGINS=BSB,GRU` scans all combinations in both directions (useful for return trip monitoring).
+- 🗓️ **Date Range** — Scans N days from the departure date and alerts the cheapest date found.
+- 📅 **Date Offset** — `DEPARTURE_DATE_OFFSET=7` always searches "7 days from now", no manual updates needed.
 - ✈️ **One-way or Round-trip** — Configurable via environment variables.
 - 👥 **Passenger Configuration** — Support for multiple adults and children.
 - 🔄 **Retry with Backoff & Token Rotation** — Retries Apify up to 3 times and rotates between up to 5 tokens if credits run out.
-- 💾 **Price History** — Saves every search in `data/history.json` (automatically committed).
+- 💾 **SQLite History** — Saves every search in `data/history.db` (automatically committed) with configurable automatic pruning.
 - 📊 **Weekly Report** — Automatic summary of the best prices of the week sent on Sundays.
 - 🤖 **Interactive Bot (Webhook)** — Commands for real-time search and history consultation.
-- 🛡️ **Smart Anti-spam** — Only sends an alert if the price drops ≥ 5% compared to the last search.
+- 🛡️ **Configurable Anti-spam** — Only sends an alert if the price drops ≥ X% (default 5%, configurable via `PRICE_DROP_THRESHOLD`).
 - ⚙️ **Advanced Filters** — Filter by airlines, maximum stops, and flight duration.
 - 💵 **Dynamic Conversion** — Converts prices from USD/other currencies to BRL in real-time via API.
 - 📰 **Miles News** — Monitors news feeds (e.g., Passageiro de Primeira) and alerts about miles/points promotions.
 - 🏷️ **Daily Offers** — Searches for flight and travel package deals in specialized feeds.
 - 💚 **Daily Health Check** — Sends a Telegram message confirming the tracker ran successfully.
+- 🔒 **Secure Webhook** — Commands accepted only from the authorized `TELEGRAM_CHAT_ID`.
 - 🧪 **Tests with Coverage** — CI blocks PRs with coverage below 80%.
 
 ---
 
 ## Stack
 
-- **Node.js + TypeScript** with `ts-node`
+- **Node.js 22 + TypeScript** with `ts-node`
 - **APIs**: Apify (Primary) → RapidAPI/Skyscanner (Fallback)
 - **Notifications**: Telegram Bot
 - **Webhook Server**: Native HTTP server to process Telegram commands
-- **Currency**: ExchangeRate-API for real-time BRL conversion
+- **History**: SQLite via `node:sqlite` (native in Node.js 22+)
 - **Tests**: Jest + `axios-mock-adapter`, coverage ≥ 80%
 - **CI/CD**: GitHub Actions — CI on every push/PR, tracker running 2x daily (08:00 and 20:00 BRT)
 
@@ -66,6 +68,8 @@ npm test              # Tests only
 npm test -- --coverage  # Tests + coverage report
 ```
 
+> **Requirement**: Node.js 22 or higher (required for `node:sqlite`).
+
 ---
 
 ## Environment Variables
@@ -79,20 +83,23 @@ npm test -- --coverage  # Tests + coverage report
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot Token |
 | `TELEGRAM_CHAT_ID` | Telegram Chat/Group ID for alerts |
 | `DESTINATIONS` | Comma-separated destinations (e.g., `GRU,SDL,FOR`) |
-| `DEPARTURE_DATE` | Departure date in `YYYY-MM-DD` format |
 
 ### Optional
 
 | Variable | Default | Description |
 |---|---|---|
+| `DEPARTURE_DATE` | — | Fixed departure date in `YYYY-MM-DD` format. Takes priority over `DEPARTURE_DATE_OFFSET`. |
+| `DEPARTURE_DATE_OFFSET` | `0` | Days from today to automatically calculate the departure date. E.g.: `7` = always 7 days from now. |
 | `ORIGIN` | `BSB` | Origin IATA code (single) |
-| `ORIGINS` | — | Multiple origins separated by comma (e.g., `BSB,GRU`). Takes priority over `ORIGIN`. Scans all origin→destination combinations in both directions. |
+| `ORIGINS` | — | Multiple origins separated by comma (e.g., `BSB,GRU`). Takes priority over `ORIGIN`. Scans all origin→destination combinations, skipping pairs where origin = destination. |
 | `TRIP_TYPE` | `one-way` | Trip type: `one-way` or `round-trip` |
 | `RETURN_DATE` | — | Return date `YYYY-MM-DD` (**mandatory** if `TRIP_TYPE=round-trip`) |
-| `DATE_RANGE_DAYS` | `1` | Number of days to scan starting from `DEPARTURE_DATE` |
+| `DATE_RANGE_DAYS` | `1` | Number of days to scan starting from the departure date |
 | `ADULTS` | `1` | Number of adult passengers |
 | `CHILDREN` | `0` | Number of child passengers |
 | `MAX_PRICE_BRL` | `300` | Maximum price threshold in BRL |
+| `PRICE_DROP_THRESHOLD` | `0.95` | Drop factor to trigger an alert (0.95 = 5% drop). E.g.: `0.90` to alert only on ≥ 10% drop. |
+| `HISTORY_RETENTION_DAYS` | `365` | How many days of history to keep. Older entries are removed automatically. |
 | `WEBHOOK_PORT` | `3000` | Port for the bot's webhook server |
 | `AIRLINES_WHITELIST` | — | Comma-separated airlines (e.g., `LATAM,GOL`) |
 | `MAX_STOPS` | — | Maximum number of stops (0 = direct) |
@@ -100,6 +107,14 @@ npm test -- --coverage  # Tests + coverage report
 | `APIFY_API_TOKEN_2..5`| — | Additional tokens for rotation (optional) |
 | `APIFY_ACTOR_ID` | `johnvc~google-flights...` | Apify Actor ID |
 | `RAPIDAPI_HOST` | `sky-scrapper.p.rapidapi.com` | RapidAPI Host |
+
+### Departure date — precedence
+
+```
+DEPARTURE_DATE set       →  uses that fixed date
+DEPARTURE_DATE_OFFSET=7  →  always searches 7 days from now (recalculated on each run)
+neither set              →  searches for today
+```
 
 ### Example `.env`
 
@@ -111,11 +126,13 @@ TELEGRAM_CHAT_ID=-100xxxxxxxx
 
 ORIGIN=BSB
 DESTINATIONS=GRU,SDL,FOR
-DEPARTURE_DATE=2026-07-10
+DEPARTURE_DATE_OFFSET=7
 TRIP_TYPE=round-trip
 RETURN_DATE=2026-07-20
 DATE_RANGE_DAYS=7
 MAX_PRICE_BRL=400
+PRICE_DROP_THRESHOLD=0.90
+HISTORY_RETENTION_DAYS=180
 ```
 
 ---
@@ -124,7 +141,7 @@ MAX_PRICE_BRL=400
 
 ### Required Secrets
 
-Go to **Settings → Secrets and variables → Actions** and add:
+Go to **Settings → Secrets and variables → Actions → Secrets** and add:
 
 | Secret | Mandatory |
 |---|---|
@@ -132,25 +149,37 @@ Go to **Settings → Secrets and variables → Actions** and add:
 | `RAPIDAPI_KEY` | ✅ |
 | `TELEGRAM_BOT_TOKEN` | ✅ |
 | `TELEGRAM_CHAT_ID` | ✅ |
-| `DESTINATIONS` | ✅ |
-| `DEPARTURE_DATE` | ✅ |
-| `TRIP_TYPE` | Optional (`one-way` is default) |
-| `RETURN_DATE` | Mandatory if `TRIP_TYPE=round-trip` |
-| `DATE_RANGE_DAYS` | Optional |
-| `MAX_PRICE_BRL` | Optional |
-| `ORIGIN` | Optional (default `BSB`) |
-| `ORIGINS` | Optional — multiple origins (e.g., `BSB,GRU`) |
-| `APIFY_ACTOR_ID` | Optional |
-| `RAPIDAPI_HOST` | Optional |
+
+### Required Variables
+
+Go to **Settings → Secrets and variables → Actions → Variables** and add:
+
+| Variable | Mandatory | Example |
+|---|---|---|
+| `DESTINATIONS` | ✅ | `GRU,SDL,FOR` |
+| `DEPARTURE_DATE_OFFSET` | recommended | `7` |
+| `DEPARTURE_DATE` | optional (fixed) | `2026-07-10` |
+| `TRIP_TYPE` | optional | `one-way` |
+| `RETURN_DATE` | if round-trip | `2026-07-20` |
+| `DATE_RANGE_DAYS` | optional | `7` |
+| `MAX_PRICE_BRL` | optional | `400` |
+| `ORIGIN` | optional | `BSB` |
+| `ORIGINS` | optional | `BSB,GRU` |
+| `PRICE_DROP_THRESHOLD` | optional | `0.90` |
+| `HISTORY_RETENTION_DAYS` | optional | `365` |
+| `APIFY_ACTOR_ID` | optional | — |
+| `RAPIDAPI_HOST` | optional | — |
 
 ### Workflows
 
 | Workflow | Trigger | Description |
 |---|---|---|
 | `ci.yml` | Push and Pull Request | Runs tests + coverage (blocks if < 80%) |
-| `check-flights.yml` | Cron 08:00/20:00 BRT + manual | Scans flights, sends alerts, commits history |
+| `check-flights.yml` | Cron 08:00/20:00 BRT + manual | Scans flights, sends alerts, commits `history.db` and `health.json` |
 | `check-news.yml` | Cron 3x daily | Monitors miles and points news |
 | `check-offers.yml` | Cron every 2 hours | Scans for new travel offers |
+
+> All workflows use **Node.js 22** (required for `node:sqlite`).
 
 ---
 
@@ -172,7 +201,7 @@ bsb-price-track/
 │   │   ├── news.ts               # RSS fetch and keyword filter logic (Miles/News)
 │   │   ├── telegram.ts           # Telegram message sending
 │   │   ├── currency.ts           # Currency conversion to BRL
-│   │   ├── history.ts            # history.json read/write
+│   │   ├── history.ts            # SQLite history read/write (history.db)
 │   │   ├── healthCheck.ts        # Daily health check on Telegram
 │   │   ├── webhook.ts            # Webhook server logic
 │   │   └── weeklyReport.ts       # Weekly report generation
@@ -181,7 +210,7 @@ bsb-price-track/
 │   │   └── dates.ts              # generateDateRange — date range generator
 │   └── __tests__/                # Unit tests (Jest)
 ├── data/
-│   ├── history.json              # Search history (auto-committed by CI)
+│   ├── history.db                # Search history in SQLite (auto-committed by CI)
 │   ├── health.json               # Daily health check control
 │   ├── news-seen.json            # Database of already sent news
 │   └── offers-seen.json          # Database of already sent offers
@@ -191,10 +220,10 @@ bsb-price-track/
 │       ├── check-flights.yml     # Flight Tracker — cron 2x daily
 │       ├── check-news.yml        # News Tracker — cron 3x daily
 │       └── check-offers.yml      # Offers Tracker — cron every 2h
+├── .gitattributes                # Marks *.db as binary (prevents text diff on SQLite)
 ├── .env.example
 ├── package.json
-├── tsconfig.json
-└── README.md
+└── tsconfig.json
 ```
 
 ---
@@ -268,11 +297,9 @@ _14 checks performed this week_
 
 ---
 
----
-
 ## Interactive Bot (Webhook)
 
-The project now includes a webhook server to respond to commands directly via Telegram.
+The project includes a webhook server to respond to commands directly via Telegram. Only messages from the configured `TELEGRAM_CHAT_ID` are accepted.
 
 ### Available Commands
 
@@ -301,29 +328,38 @@ You can refine your search using environment variables to avoid unwanted flight 
 - **Direct Flights**: Set `MAX_STOPS=0` to ignore flights with layovers.
 - **Flight Duration**: Use `MAX_DURATION_HOURS=5` to filter out long flights.
 
-### Smart Anti-Spam
+### Configurable Anti-Spam
 
-To avoid repetitive notifications of small price variations, the tracker now implements a **5% drop** logic. A new alert is only triggered for the same route and date if the current price is at least **5% lower** than the lowest price found in the previous search.
+A new alert is only triggered for the same route and date if the current price is at least X% lower than the lowest price found in the previous search. The threshold is configurable:
+
+```env
+PRICE_DROP_THRESHOLD=0.95   # alert on ≥ 5% drop (default)
+PRICE_DROP_THRESHOLD=0.90   # alert only on ≥ 10% drop
+PRICE_DROP_THRESHOLD=1.00   # always alert (no filter)
+```
 
 ---
 
 ## Search Flow
 
 ```
-For each destination in DESTINATIONS:
-  ├── Generate date range (DATE_RANGE_DAYS)
-  │
-  ├── If only 1 date:
-  │   └── Search → alert all flights below threshold → send summary
-  │
-  └── If multiple dates:
-      ├── For each date:
-      │   ├── Try Apify (up to 3x with retry)
-      │   ├── If it fails → try RapidAPI
-      │   └── Save result in data/history.json
-      ├── Find the date with the cheapest flight
-      ├── If below threshold → send alert
-      └── Send range summary
+For each origin in ORIGINS:
+  For each destination in DESTINATIONS (skipping origin = destination):
+    ├── Calculate departure date (DEPARTURE_DATE > DEPARTURE_DATE_OFFSET > today)
+    ├── Generate date range (DATE_RANGE_DAYS)
+    │
+    ├── If only 1 date:
+    │   ├── Try Apify (up to 3x with retry, token rotation on 402/403)
+    │   ├── If it fails → try RapidAPI
+    │   ├── Apply advanced filters
+    │   ├── Save to data/history.db (automatic pruning)
+    │   └── If below threshold AND drop ≥ PRICE_DROP_THRESHOLD → send alert
+    │
+    └── If multiple dates:
+        ├── For each date: search → filter → save
+        ├── Find the date with the cheapest flight
+        ├── If below threshold AND drop ≥ PRICE_DROP_THRESHOLD → send alert
+        └── Send range summary
 ```
 
 ---
@@ -345,15 +381,16 @@ npm run start:webhook # Run compiled bot (production)
 
 ### Adding a New Destination
 
-Simply add the IATA code to the `DESTINATIONS` variable (or GitHub secret):
+Simply add the IATA code to the `DESTINATIONS` variable (or GitHub Variable):
 
 ```env
 DESTINATIONS=GRU,SDL,FOR,CNF,VCP
 ```
 
-### Adjusting Search Interval
+### Dynamic Date Search
 
 ```env
-DEPARTURE_DATE=2026-07-10
-DATE_RANGE_DAYS=14   # scans from 07/10 to 07/23
+# Always searches 14 days from now, scanning a 7-day window
+DEPARTURE_DATE_OFFSET=14
+DATE_RANGE_DAYS=7
 ```
