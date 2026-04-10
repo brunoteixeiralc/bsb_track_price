@@ -38,6 +38,7 @@ jobs:
           echo "Rota:           ${{ vars.ORIGINS || vars.ORIGIN }} → ${{ vars.DESTINATIONS }}"
           echo "Tipo de viagem: ${{ vars.TRIP_TYPE || 'one-way' }}"
           echo "Preço máximo:   R$ ${{ vars.MAX_PRICE_BRL }}"
+          echo "Data partida:   ${{ vars.DEPARTURE_DATE || 'hoje + offset' }} (offset: ${{ vars.DEPARTURE_DATE_OFFSET || '0' }} dia(s))"
           echo "Intervalo:      ${{ vars.DATE_RANGE_DAYS || '1' }} dia(s)"
           echo "Max escalas:    ${{ vars.MAX_STOPS || 'sem limite' }}"
           echo "Adults/Children: ${{ vars.ADULTS || '1' }}/${{ vars.CHILDREN || '0' }}"
@@ -68,6 +69,7 @@ jobs:
           ORIGIN: ${{ vars.ORIGIN }}
           DESTINATIONS: ${{ vars.DESTINATIONS }}
           DEPARTURE_DATE: ${{ vars.DEPARTURE_DATE }}
+          DEPARTURE_DATE_OFFSET: ${{ vars.DEPARTURE_DATE_OFFSET }}
           DATE_RANGE_DAYS: ${{ vars.DATE_RANGE_DAYS }}
           TRIP_TYPE: ${{ vars.TRIP_TYPE }}
           RETURN_DATE: ${{ vars.RETURN_DATE }}

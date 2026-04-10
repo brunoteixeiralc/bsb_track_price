@@ -54,7 +54,13 @@ export const config = {
       if (!raw) throw new Error("Missing required env var: DESTINATIONS");
       return raw.split(",").map((s) => s.trim()).filter(Boolean);
     })(),
-    departureDate: process.env.DEPARTURE_DATE ?? new Date().toISOString().split("T")[0],
+    departureDate: (() => {
+      if (process.env.DEPARTURE_DATE) return process.env.DEPARTURE_DATE;
+      const offset = Number(process.env.DEPARTURE_DATE_OFFSET ?? "0");
+      const date = new Date();
+      date.setDate(date.getDate() + offset);
+      return date.toISOString().split("T")[0];
+    })(),
     dateRangeDays: Number(process.env.DATE_RANGE_DAYS ?? "1"),
     adults: Number(process.env.ADULTS ?? "1"),
     children: Number(process.env.CHILDREN ?? "0"),
