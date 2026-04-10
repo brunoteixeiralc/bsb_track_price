@@ -1,0 +1,4 @@
+# Trata arquivos SQLite como binários — evita diffs de texto e conflitos de merge
+*.db binary
+*.db-shm binary
+*.db-wal binary
