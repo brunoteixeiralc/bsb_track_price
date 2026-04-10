@@ -1,5 +1,12 @@
 import http from "http";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
+
+function formatError(err: unknown): string {
+  if (isAxiosError(err)) {
+    return `HTTP ${err.response?.status ?? "?"}: ${err.message}`;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
 import { config } from "../config";
 import { SearchParams } from "../types";
 import { searchWithApify } from "../apis/apify";
@@ -61,7 +68,7 @@ export async function handleBuscar(chatId: number, destination: string): Promise
     try {
       flights = await searchWithRapidAPI(params);
     } catch (err) {
-      console.error(`[webhook] Ambas as APIs falharam para ${dest}:`, err);
+      console.error(`[webhook] Ambas as APIs falharam para ${dest}: ${formatError(err)}`);
       await sendReply(
         chatId,
         `❌ Falha ao buscar voos ${config.search.origin} → ${dest}. Tente novamente mais tarde.`
@@ -179,7 +186,7 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
       );
     }
   } catch (err) {
-    console.error(`[webhook] Erro ao processar comando ${cmd}:`, err);
+    console.error(`[webhook] Erro ao processar comando ${cmd}: ${formatError(err)}`);
     await sendReply(chatId, `❌ Erro interno ao processar o comando.`).catch(() => {});
   }
 }
@@ -199,7 +206,7 @@ export function createWebhookServer(): http.Server {
         const update: TelegramUpdate = JSON.parse(body);
         await handleUpdate(update);
       } catch (err) {
-        console.error("[webhook] Erro ao processar update:", err);
+        console.error(`[webhook] Erro ao processar update: ${formatError(err)}`);
       } finally {
         // Sempre retorna 200 para o Telegram não reenviar o update
         res.writeHead(200);

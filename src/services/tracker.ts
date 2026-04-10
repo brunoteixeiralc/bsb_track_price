@@ -111,7 +111,7 @@ async function searchAndNotify(params: SearchParams): Promise<void> {
   try {
     flights = await fetchFlights(params);
   } catch (err) {
-    console.error("[tracker] Ambas as APIs falharam.", err);
+    console.error(`[tracker] Ambas as APIs falharam: ${(err as Error).message}`);
     await sendErrorAlert(route, `Busca de ${params.departureDate} falhou. Apify e RapidAPI indisponíveis.`);
     throw new Error("Todas as fontes de dados falharam.");
   }
@@ -199,7 +199,7 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
       flights = await fetchFlights(params);
     } catch (err) {
       apiFailures++;
-      console.warn(`[tracker] ${route} em ${date} falhou, pulando...`, (err as Error).message);
+      console.warn(`[tracker] ${route} em ${date} falhou, pulando: ${(err as Error).message}`);
       continue;
     }
 

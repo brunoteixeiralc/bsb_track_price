@@ -19,7 +19,7 @@ async function main(): Promise<void> {
     console.log("✅ Execução concluída com sucesso.");
     process.exit(0);
   } catch (err) {
-    console.error("❌ Erro fatal:", err);
+    console.error(`❌ Erro fatal: ${(err as Error).message ?? String(err)}`);
     process.exit(1);
   }
 }

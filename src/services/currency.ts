@@ -24,7 +24,7 @@ export async function getUSDtoBRL(): Promise<number> {
     console.log(`[currency] USD→BRL: ${rate}`);
     return rate;
   } catch (err) {
-    console.warn(`[currency] Falha ao buscar taxa, usando fallback ${FALLBACK_USD_BRL}`, err);
+    console.warn(`[currency] Falha ao buscar taxa, usando fallback ${FALLBACK_USD_BRL}: ${err instanceof Error ? err.message : String(err)}`);
     return FALLBACK_USD_BRL;
   }
 }

@@ -1,6 +1,13 @@
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import fs from "fs";
 import path from "path";
+
+function formatError(err: unknown): string {
+  if (isAxiosError(err)) {
+    return `HTTP ${err.response?.status ?? "?"}: ${err.message}`;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
 
 const RSS_URL = "https://passageirodeprimeira.com/categorias/noticias/feed/";
 const SEEN_DB_PATH = path.join(process.cwd(), "data", "news-seen.json");
@@ -176,7 +183,7 @@ export async function trackRssFeed(feedConfig: FeedConfig): Promise<void> {
     });
     xml = res.data;
   } catch (err) {
-    console.error(`${tag} Falha ao buscar RSS:`, err);
+    console.error(`${tag} Falha ao buscar RSS: ${formatError(err)}`);
     throw err;
   }
 
@@ -196,7 +203,7 @@ export async function trackRssFeed(feedConfig: FeedConfig): Promise<void> {
       seen.add(item.guid);
       console.log(`${tag} Enviado: ${item.title}`);
     } catch (err) {
-      console.error(`${tag} Falha ao enviar "${item.title}":`, err);
+      console.error(`${tag} Falha ao enviar "${item.title}": ${formatError(err)}`);
     }
   }
 

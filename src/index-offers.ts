@@ -10,6 +10,6 @@ trackRssFeed({
   seenDbPath: path.join(process.cwd(), "data", "offers-seen.json"),
   feedName: "offers",
 }).catch((err) => {
-  console.error("[offers] Erro fatal:", err);
+  console.error(`[offers] Erro fatal: ${(err as Error).message ?? String(err)}`);
   process.exit(1);
 });
