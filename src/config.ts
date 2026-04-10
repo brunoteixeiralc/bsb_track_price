@@ -83,6 +83,7 @@ export const config = {
     })(),
     maxPriceBRL: Number(process.env.MAX_PRICE_BRL ?? "300"),
     priceDropThreshold: Number(process.env.PRICE_DROP_THRESHOLD ?? "0.95"),
+    historyRetentionDays: Number(process.env.HISTORY_RETENTION_DAYS ?? "365"),
   },
   filters: {
     // Lista de companhias permitidas (ex: "LATAM,GOL"). Se vazio, aceita todas.

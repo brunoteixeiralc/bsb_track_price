@@ -61,7 +61,17 @@ export function getLastCheapestPrice(
   return row ? row.cheapestPriceBRL : null;
 }
 
-export function appendHistory(entry: HistoryEntry): void {
+export function pruneOldHistory(retentionDays: number): number {
+  const db = getDb();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - retentionDays);
+  const result = db
+    .prepare("DELETE FROM history WHERE timestamp < ?")
+    .run(cutoff.toISOString()) as { changes: number };
+  return result.changes;
+}
+
+export function appendHistory(entry: HistoryEntry, retentionDays = 365): void {
   const db = getDb();
   db.prepare(
     `INSERT INTO history
@@ -77,6 +87,11 @@ export function appendHistory(entry: HistoryEntry): void {
     entry.cheapestPriceBRL ?? null,
     JSON.stringify(entry.flights)
   );
+
+  const pruned = pruneOldHistory(retentionDays);
+  if (pruned > 0) {
+    console.log(`[history] Removidas ${pruned} entrada(s) com mais de ${retentionDays} dia(s).`);
+  }
 
   const count = (db.prepare("SELECT COUNT(*) as n FROM history").get() as { n: number }).n;
   console.log(`[history] ${count} entrada(s) no histórico.`);

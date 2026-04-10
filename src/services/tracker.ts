@@ -136,7 +136,7 @@ async function searchAndNotify(params: SearchParams): Promise<void> {
       link: f.link,
       source: f.source,
     })),
-  });
+  }, config.search.historyRetentionDays);
 
   const cheapFlights = flights
     .filter((f) => f.priceBRL <= config.search.maxPriceBRL)
@@ -220,7 +220,7 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
         link: f.link,
         source: f.source,
       })),
-    });
+    }, config.search.historyRetentionDays);
 
     if (flights.length > 0) {
       cheapestPerDate.push(flights.reduce((a, b) => (a.priceBRL < b.priceBRL ? a : b)));
