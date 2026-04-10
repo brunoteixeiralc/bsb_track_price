@@ -27,6 +27,13 @@ function toIataCodes(names: string[]): string {
     .join(",");
 }
 
+function formatError(err: unknown): string {
+  if (isAxiosError(err)) {
+    return `HTTP ${err.response?.status ?? "?"}: ${err.message}`;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
+
 /**
  * Retorna true quando o erro indica que o token ficou sem créditos/saldo.
  * Apify retorna 402 Payment Required nesse caso.
@@ -214,7 +221,7 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
         console.warn(`[apify] Token ${i + 1} sem créditos, tentando token ${i + 2}...`);
         continue;
       }
-      console.error(`[apify] Erro na busca com token ${i + 1}:`, err);
+      console.error(`[apify] Erro na busca com token ${i + 1}: ${formatError(err)}`);
       throw err;
     }
   }

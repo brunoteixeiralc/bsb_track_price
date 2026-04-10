@@ -1,7 +1,14 @@
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import { config } from "../config";
 import { Flight, SearchParams } from "../types";
 import { convertToBRL } from "../services/currency";
+
+function formatError(err: unknown): string {
+  if (isAxiosError(err)) {
+    return `HTTP ${err.response?.status ?? "?"}: ${err.message}`;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
 
 // ⚠️  IMPORTANTE: Este arquivo usa a API "sky-scrapper" (Skyscanner unofficial) como exemplo.
 // Ajuste os endpoints e o mapeamento de campos conforme a API que você contratar no RapidAPI.
@@ -118,7 +125,7 @@ export async function searchWithRapidAPI(params: SearchParams): Promise<Flight[]
 
     return flights;
   } catch (err) {
-    console.error("[rapidapi] Erro na busca:", err);
+    console.error(`[rapidapi] Erro na busca: ${formatError(err)}`);
     throw err;
   }
 }

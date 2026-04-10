@@ -13,6 +13,7 @@ const mockConfig = {
     tripType: "one-way" as TripType,
     returnDate: undefined as string | undefined,
     maxPriceBRL: 300,
+    priceDropThreshold: 0.95,
     adults: 1,
     children: 0,
   },

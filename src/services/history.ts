@@ -1,38 +1,88 @@
-import fs from "fs";
+import { DatabaseSync } from "node:sqlite";
 import path from "path";
+import fs from "fs";
 import { HistoryEntry, WeeklyRouteSummary } from "../types";
 
-const HISTORY_FILE = path.resolve(process.cwd(), "data", "history.json");
+const DB_FILE = path.resolve(process.cwd(), "data", "history.db");
 
-export function loadHistory(): HistoryEntry[] {
-  if (!fs.existsSync(HISTORY_FILE)) return [];
-  return JSON.parse(fs.readFileSync(HISTORY_FILE, "utf-8"));
+let _db: DatabaseSync | null = null;
+
+function getDb(): DatabaseSync {
+  if (!_db) {
+    fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
+    _db = new DatabaseSync(DB_FILE);
+    _db.exec(`
+      CREATE TABLE IF NOT EXISTS history (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp  TEXT    NOT NULL,
+        origin     TEXT    NOT NULL,
+        destination TEXT   NOT NULL,
+        departureDate TEXT NOT NULL,
+        returnDate TEXT,
+        totalFound INTEGER NOT NULL,
+        cheapestPriceBRL REAL,
+        flights    TEXT    NOT NULL DEFAULT '[]'
+      )
+    `);
+  }
+  return _db;
 }
 
-export function getLastCheapestPrice(origin: string, destination: string, departureDate: string): number | null {
-  const history = loadHistory();
-  const relevant = history.filter(
-    (e) =>
-      e.origin === origin &&
-      e.destination === destination &&
-      e.departureDate === departureDate &&
-      e.cheapestPriceBRL !== null
-  );
-  if (relevant.length === 0) return null;
-  return relevant[relevant.length - 1].cheapestPriceBRL;
+/** Fecha a conexão com o banco (usado em testes para reset entre casos). */
+export function closeDb(): void {
+  if (_db) {
+    _db.close();
+    _db = null;
+  }
+}
+
+export function loadHistory(): HistoryEntry[] {
+  const db = getDb();
+  const rows = db.prepare("SELECT * FROM history ORDER BY id ASC").all() as Array<Record<string, unknown>>;
+  return rows.map(rowToEntry);
+}
+
+export function getLastCheapestPrice(
+  origin: string,
+  destination: string,
+  departureDate: string
+): number | null {
+  const db = getDb();
+  const row = db
+    .prepare(
+      `SELECT cheapestPriceBRL FROM history
+       WHERE origin = ? AND destination = ? AND departureDate = ?
+         AND cheapestPriceBRL IS NOT NULL
+       ORDER BY id DESC
+       LIMIT 1`
+    )
+    .get(origin, destination, departureDate) as { cheapestPriceBRL: number } | undefined;
+
+  return row ? row.cheapestPriceBRL : null;
 }
 
 export function appendHistory(entry: HistoryEntry): void {
-  const history = loadHistory();
-  history.push(entry);
-  fs.mkdirSync(path.dirname(HISTORY_FILE), { recursive: true });
-  fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
-  console.log(`[history] ${history.length} entrada(s) no histórico.`);
+  const db = getDb();
+  db.prepare(
+    `INSERT INTO history
+       (timestamp, origin, destination, departureDate, returnDate, totalFound, cheapestPriceBRL, flights)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    entry.timestamp,
+    entry.origin,
+    entry.destination,
+    entry.departureDate,
+    entry.returnDate ?? null,
+    entry.totalFound,
+    entry.cheapestPriceBRL ?? null,
+    JSON.stringify(entry.flights)
+  );
+
+  const count = (db.prepare("SELECT COUNT(*) as n FROM history").get() as { n: number }).n;
+  console.log(`[history] ${count} entrada(s) no histórico.`);
 }
 
 export function getWeeklySummary(now: Date = new Date()): WeeklyRouteSummary[] {
-  const history = loadHistory();
-
   // Current week: last 7 days up to end of today
   const todayEnd = new Date(now);
   todayEnd.setHours(23, 59, 59, 999);
@@ -49,22 +99,40 @@ export function getWeeklySummary(now: Date = new Date()): WeeklyRouteSummary[] {
   previousWeekStart.setDate(previousWeekStart.getDate() - 6);
   previousWeekStart.setHours(0, 0, 0, 0);
 
-  const routeMap = new Map<string, {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT origin, destination, timestamp, cheapestPriceBRL
+       FROM history
+       WHERE timestamp >= ? AND timestamp <= ?
+       ORDER BY id ASC`
+    )
+    .all(previousWeekStart.toISOString(), todayEnd.toISOString()) as Array<{
     origin: string;
     destination: string;
-    currentPrices: number[];
-    previousPrices: number[];
-    checksThisWeek: number;
-  }>();
+    timestamp: string;
+    cheapestPriceBRL: number | null;
+  }>;
 
-  for (const entry of history) {
-    const ts = new Date(entry.timestamp);
-    const routeKey = `${entry.origin}→${entry.destination}`;
+  const routeMap = new Map<
+    string,
+    {
+      origin: string;
+      destination: string;
+      currentPrices: number[];
+      previousPrices: number[];
+      checksThisWeek: number;
+    }
+  >();
+
+  for (const row of rows) {
+    const ts = new Date(row.timestamp);
+    const routeKey = `${row.origin}→${row.destination}`;
 
     if (!routeMap.has(routeKey)) {
       routeMap.set(routeKey, {
-        origin: entry.origin,
-        destination: entry.destination,
+        origin: row.origin,
+        destination: row.destination,
         currentPrices: [],
         previousPrices: [],
         checksThisWeek: 0,
@@ -75,12 +143,12 @@ export function getWeeklySummary(now: Date = new Date()): WeeklyRouteSummary[] {
 
     if (ts >= currentWeekStart && ts <= todayEnd) {
       data.checksThisWeek++;
-      if (entry.cheapestPriceBRL !== null) {
-        data.currentPrices.push(entry.cheapestPriceBRL);
+      if (row.cheapestPriceBRL !== null) {
+        data.currentPrices.push(row.cheapestPriceBRL);
       }
     } else if (ts >= previousWeekStart && ts <= previousWeekEnd) {
-      if (entry.cheapestPriceBRL !== null) {
-        data.previousPrices.push(entry.cheapestPriceBRL);
+      if (row.cheapestPriceBRL !== null) {
+        data.previousPrices.push(row.cheapestPriceBRL);
       }
     }
   }
@@ -88,8 +156,10 @@ export function getWeeklySummary(now: Date = new Date()): WeeklyRouteSummary[] {
   const summaries: WeeklyRouteSummary[] = [];
 
   for (const [route, data] of routeMap.entries()) {
-    const currentWeekMin = data.currentPrices.length > 0 ? Math.min(...data.currentPrices) : null;
-    const previousWeekMin = data.previousPrices.length > 0 ? Math.min(...data.previousPrices) : null;
+    const currentWeekMin =
+      data.currentPrices.length > 0 ? Math.min(...data.currentPrices) : null;
+    const previousWeekMin =
+      data.previousPrices.length > 0 ? Math.min(...data.previousPrices) : null;
 
     let trend: "up" | "down" | "stable" | "unknown" = "unknown";
     if (currentWeekMin !== null && previousWeekMin !== null) {
@@ -111,4 +181,19 @@ export function getWeeklySummary(now: Date = new Date()): WeeklyRouteSummary[] {
   }
 
   return summaries.sort((a, b) => a.route.localeCompare(b.route));
+}
+
+// ---------- helpers ----------
+
+function rowToEntry(row: Record<string, unknown>): HistoryEntry {
+  return {
+    timestamp: row.timestamp as string,
+    origin: row.origin as string,
+    destination: row.destination as string,
+    departureDate: row.departureDate as string,
+    returnDate: row.returnDate as string | undefined,
+    totalFound: row.totalFound as number,
+    cheapestPriceBRL: row.cheapestPriceBRL as number | null,
+    flights: JSON.parse(row.flights as string),
+  };
 }

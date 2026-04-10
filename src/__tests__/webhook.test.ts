@@ -290,7 +290,7 @@ describe("handleUpdate", () => {
       update_id: 1,
       message: {
         message_id: 1,
-        chat: { id: 42, type: "private" },
+        chat: { id: 999, type: "private" },
         text: "/buscar GRU",
       },
     });
@@ -306,7 +306,7 @@ describe("handleUpdate", () => {
       update_id: 2,
       message: {
         message_id: 2,
-        chat: { id: 42, type: "private" },
+        chat: { id: 999, type: "private" },
         text: "/historico GRU",
       },
     });
@@ -321,7 +321,7 @@ describe("handleUpdate", () => {
       update_id: 3,
       message: {
         message_id: 3,
-        chat: { id: 42, type: "private" },
+        chat: { id: 999, type: "private" },
         text: "/status",
       },
     });
@@ -337,7 +337,7 @@ describe("handleUpdate", () => {
       update_id: 4,
       message: {
         message_id: 4,
-        chat: { id: 42, type: "private" },
+        chat: { id: 999, type: "private" },
         text: "/desconhecido",
       },
     });
@@ -356,7 +356,7 @@ describe("handleUpdate", () => {
       update_id: 5,
       message: {
         message_id: 5,
-        chat: { id: 42, type: "private" },
+        chat: { id: 999, type: "private" },
         text: "/status@MeuTrackerBot",
       },
     });
@@ -402,7 +402,7 @@ describe("createWebhookServer", () => {
         update_id: 1,
         message: {
           message_id: 1,
-          chat: { id: 42, type: "private" },
+          chat: { id: 999, type: "private" },
           text: "/status",
         },
       });

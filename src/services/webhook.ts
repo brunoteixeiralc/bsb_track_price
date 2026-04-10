@@ -150,6 +150,12 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
   if (!msg?.text) return;
 
   const chatId = msg.chat.id;
+
+  if (String(chatId) !== config.telegram.chatId) {
+    console.warn(`[webhook] Mensagem ignorada de chat não autorizado: ${chatId}`);
+    return;
+  }
+
   const text = msg.text.trim();
 
   // Extrai comando e argumento, removendo sufixo do bot (ex: /buscar@MeuBot → /buscar)

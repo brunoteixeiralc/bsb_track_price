@@ -146,7 +146,7 @@ async function searchAndNotify(params: SearchParams): Promise<void> {
 
   if (cheapFlights.length > 0) {
     const currentCheapest = cheapFlights[0].priceBRL;
-    const priceDrop = previousCheapest === null || currentCheapest <= previousCheapest * 0.95;
+    const priceDrop = previousCheapest === null || currentCheapest <= previousCheapest * config.search.priceDropThreshold;
 
     if (priceDrop) {
       if (previousCheapest !== null) {
@@ -245,7 +245,7 @@ async function searchDateRange(baseParams: SearchParams, dates: string[]): Promi
 
   if (best && best.priceBRL <= config.search.maxPriceBRL) {
     const previousCheapest = previousPricePerDate.get(best.departureDate) ?? null;
-    const priceDrop = previousCheapest === null || best.priceBRL <= previousCheapest * 0.95;
+    const priceDrop = previousCheapest === null || best.priceBRL <= previousCheapest * config.search.priceDropThreshold;
 
     if (priceDrop) {
       if (previousCheapest !== null) {

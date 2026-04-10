@@ -23,7 +23,7 @@ export const config = {
       }
       return tokens;
     })(),
-    actorId: process.env.APIFY_ACTOR_ID ?? "johnvc~google-flights-data-scraper-flight-and-price-search",
+    actorId: process.env.APIFY_ACTOR_ID || "johnvc~google-flights-data-scraper-flight-and-price-search",
   },
   rapidapi: {
     key: required("RAPIDAPI_KEY"),
@@ -76,6 +76,7 @@ export const config = {
       return undefined;
     })(),
     maxPriceBRL: Number(process.env.MAX_PRICE_BRL ?? "300"),
+    priceDropThreshold: Number(process.env.PRICE_DROP_THRESHOLD ?? "0.95"),
   },
   filters: {
     // Lista de companhias permitidas (ex: "LATAM,GOL"). Se vazio, aceita todas.

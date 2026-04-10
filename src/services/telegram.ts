@@ -1,8 +1,20 @@
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import { config } from "../config";
 import { Flight, TripType, WeeklyRouteSummary } from "../types";
 import { formatBRL, convertToBRL } from "./currency";
 import { calcTrend, bestDayOfWeek } from "../utils/priceHistory";
+
+function formatError(err: unknown): string {
+  if (isAxiosError(err)) {
+    return `HTTP ${err.response?.status ?? "?"}: ${err.message}`;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
+
+function escapeMd(text: string | undefined): string {
+  if (!text) return "";
+  return text.replace(/([*_`[\]()])/g, "\\$1");
+}
 
 const BASE_URL = `https://api.telegram.org/bot${config.telegram.botToken}`;
 const TIMEOUT_MS = 10_000;
@@ -34,11 +46,11 @@ async function buildMessage(flight: Flight, lowLevelAlert = false): Promise<stri
   }
 
   if (flight.airline) {
-    lines.push(`🏢 ${flight.airline}`);
+    lines.push(`🏢 ${escapeMd(flight.airline)}`);
   }
 
   if (flight.flightNumber || flight.airplane) {
-    const parts = [flight.flightNumber, flight.airplane].filter(Boolean);
+    const parts = [escapeMd(flight.flightNumber), escapeMd(flight.airplane)].filter(Boolean);
     lines.push(`🛩️ ${parts.join(" · ")}`);
   }
 
@@ -104,7 +116,7 @@ export async function sendFlightAlert(flight: Flight, lowLevelAlert = false): Pr
     }, { timeout: TIMEOUT_MS });
     console.log(`[telegram] Alerta enviado: ${flight.origin}→${flight.destination} ${formatBRL(flight.priceBRL)}`);
   } catch (err) {
-    console.error("[telegram] Erro ao enviar mensagem:", err);
+    console.error(`[telegram] Erro ao enviar mensagem: ${formatError(err)}`);
     throw err;
   }
 }
@@ -118,7 +130,7 @@ export async function sendAntiSpamNotice(route: string, currentBRL: number, prev
       parse_mode: "Markdown",
     }, { timeout: TIMEOUT_MS });
   } catch (err) {
-    console.error("[telegram] Erro ao enviar aviso anti-spam:", err);
+    console.error(`[telegram] Erro ao enviar aviso anti-spam: ${formatError(err)}`);
   }
 }
 
@@ -138,7 +150,7 @@ export async function sendErrorAlert(route: string, details: string): Promise<vo
     }, { timeout: TIMEOUT_MS });
     console.log(`[telegram] Alerta de erro enviado para ${route}`);
   } catch (err) {
-    console.error("[telegram] Erro ao enviar alerta de falha:", err);
+    console.error(`[telegram] Erro ao enviar alerta de falha: ${formatError(err)}`);
   }
 }
 
@@ -153,7 +165,7 @@ export async function sendHealthCheck(): Promise<void> {
     }, { timeout: TIMEOUT_MS });
     console.log("[telegram] Health check enviado.");
   } catch (err) {
-    console.error("[telegram] Erro ao enviar health check:", err);
+    console.error(`[telegram] Erro ao enviar health check: ${formatError(err)}`);
   }
 }
 
@@ -180,7 +192,7 @@ export async function sendDateRangeSummary(
       parse_mode: "Markdown",
     }, { timeout: TIMEOUT_MS });
   } catch (err) {
-    console.error("[telegram] Erro ao enviar resumo de intervalo:", err);
+    console.error(`[telegram] Erro ao enviar resumo de intervalo: ${formatError(err)}`);
   }
 }
 
@@ -196,7 +208,7 @@ export async function sendSummary(found: number, checked: number, route?: string
       text,
     }, { timeout: TIMEOUT_MS });
   } catch (err) {
-    console.error("[telegram] Erro ao enviar resumo:", err);
+    console.error(`[telegram] Erro ao enviar resumo: ${formatError(err)}`);
   }
 }
 
@@ -213,7 +225,7 @@ export async function sendWeeklyReport(summaries: WeeklyRouteSummary[]): Promise
       }, { timeout: TIMEOUT_MS });
       console.log("[telegram] Relatório semanal enviado (sem rotas).");
     } catch (err) {
-      console.error("[telegram] Erro ao enviar relatório semanal:", err);
+      console.error(`[telegram] Erro ao enviar relatório semanal: ${formatError(err)}`);
       throw err;
     }
     return;
@@ -270,7 +282,7 @@ export async function sendWeeklyReport(summaries: WeeklyRouteSummary[]): Promise
     }, { timeout: TIMEOUT_MS });
     console.log(`[telegram] Relatório semanal enviado com ${summaries.length} rota(s).`);
   } catch (err) {
-    console.error("[telegram] Erro ao enviar relatório semanal:", err);
+    console.error(`[telegram] Erro ao enviar relatório semanal: ${formatError(err)}`);
     throw err;
   }
 }
