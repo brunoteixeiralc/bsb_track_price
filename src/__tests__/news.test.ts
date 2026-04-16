@@ -1,6 +1,7 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import fs from "fs";
+import path from "path";
 import { parseRssItems, isMilhaRelated, isKeywordRelated, buildNewsMessage, loadSeenGuids, saveSeenGuids, runNewsTracker, trackRssFeed, RssItem } from "../services/news";
 
 // news.ts lê diretamente das env vars, sem usar config.ts
@@ -208,10 +209,21 @@ describe("saveSeenGuids", () => {
 // ── runNewsTracker ────────────────────────────────────────────────────────────
 
 describe("runNewsTracker", () => {
+  // Mock de fs com estado compartilhado: writeFileSync persiste e readFileSync lê
+  // o mesmo estado. Isso simula o comportamento real entre os 2 feeds sequenciais,
+  // garantindo que o feed 2 veja os GUIDs salvos pelo feed 1 (sem duplicatas).
+  let seenStore: Record<string, string> = {};
+
   beforeEach(() => {
-    jest.spyOn(fs, "readFileSync").mockImplementation(() => { throw new Error("ENOENT"); });
+    seenStore = {};
+    jest.spyOn(fs, "readFileSync").mockImplementation((p: any) => {
+      if (!(String(p) in seenStore)) throw new Error("ENOENT");
+      return seenStore[String(p)];
+    });
     jest.spyOn(fs, "mkdirSync").mockReturnValue(undefined as any);
-    jest.spyOn(fs, "writeFileSync").mockReturnValue();
+    jest.spyOn(fs, "writeFileSync").mockImplementation((p: any, data: any) => {
+      seenStore[String(p)] = String(data);
+    });
   });
 
   it("busca o RSS e envia alertas Telegram para itens novos com milhas", async () => {
@@ -220,7 +232,7 @@ describe("runNewsTracker", () => {
 
     await runNewsTracker();
 
-    // 2 itens com milhas no RSS_WITH_MILHA
+    // Feed 1 envia 2 itens; feed 2 carrega os GUIDs salvos e não reenvia nada
     expect(mock.history.post).toHaveLength(2);
     const body = JSON.parse(mock.history.post[0].data);
     expect(body.chat_id).toBe("123456");
@@ -238,20 +250,16 @@ describe("runNewsTracker", () => {
   });
 
   it("não reenvia itens já vistos (controle de duplicatas)", async () => {
-    // simula guid já salvo no banco
-    jest.restoreAllMocks();
-    jest.spyOn(fs, "readFileSync").mockReturnValue(
-      JSON.stringify(["https://passageirodeprimeira.com/smiles-bonus-100"])
-    );
-    jest.spyOn(fs, "mkdirSync").mockReturnValue(undefined as any);
-    jest.spyOn(fs, "writeFileSync").mockReturnValue();
+    // Pré-popula o banco com o guid do primeiro item já visto
+    const dbPath = path.join(process.cwd(), "data", "news-seen.json");
+    seenStore[dbPath] = JSON.stringify(["https://passageirodeprimeira.com/smiles-bonus-100"]);
 
     mock.onGet(/passageirodeprimeira/).reply(200, RSS_WITH_MILHA);
     mock.onPost(/sendMessage/).reply(200, { ok: true });
 
     await runNewsTracker();
 
-    // apenas 1 novo (o segundo item), o primeiro já foi visto
+    // apenas 1 novo (LATAM), o Smiles já foi visto — em ambos os feeds
     expect(mock.history.post).toHaveLength(1);
     const body = JSON.parse(mock.history.post[0].data);
     expect(body.text).toContain("LATAM");
@@ -266,24 +274,26 @@ describe("runNewsTracker", () => {
   it("continua enviando outros itens mesmo se um alerta Telegram falhar", async () => {
     mock.onGet(/passageirodeprimeira/).reply(200, RSS_WITH_MILHA);
     mock.onPost(/sendMessage/)
-      .replyOnce(500, { ok: false }) // primeiro falha
+      .replyOnce(500, { ok: false }) // item 1 falha no feed 1
       .onPost(/sendMessage/)
-      .reply(200, { ok: true });    // segundo ok
+      .reply(200, { ok: true });    // item 2 (feed 1) + retry item 1 (feed 2): ok
 
     await expect(runNewsTracker()).resolves.not.toThrow();
-    expect(mock.history.post).toHaveLength(2);
+    // Feed 1: 2 tentativas (1 falha + 1 ok); feed 2: retry do item que falhou (1 ok)
+    expect(mock.history.post).toHaveLength(3);
   });
 
   it("salva os GUIDs após processar os itens", async () => {
-    const writeSpy = jest.spyOn(fs, "writeFileSync").mockReturnValue();
     mock.onGet(/passageirodeprimeira/).reply(200, RSS_WITH_MILHA);
     mock.onPost(/sendMessage/).reply(200, { ok: true });
 
     await runNewsTracker();
 
-    expect(writeSpy).toHaveBeenCalledTimes(1);
-    const saved: string[] = JSON.parse(writeSpy.mock.calls[0][1] as string);
+    // Verifica o estado final do banco via seenStore
+    const dbPath = path.join(process.cwd(), "data", "news-seen.json");
+    const saved: string[] = JSON.parse(seenStore[dbPath]);
     expect(saved).toContain("https://passageirodeprimeira.com/smiles-bonus-100");
+    expect(saved).toContain("https://passageirodeprimeira.com/latam-rotas-2026");
   });
 });
 
