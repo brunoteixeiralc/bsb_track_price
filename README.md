@@ -17,8 +17,8 @@ Monitora passagens aéreas saindo de Brasília (BSB) e envia alertas no Telegram
 - 🛡️ **Anti-spam configurável** — só envia alerta se o preço cair ≥ X% (padrão 5%, configurável via `PRICE_DROP_THRESHOLD`)
 - ⚙️ **Filtros Avançados** — filtre por companhias aéreas, máximo de escalas e duração do voo
 - 💵 **Conversão Dinâmica** — converte preços de USD/outras moedas para BRL em tempo real via API
-- 📰 **Notícias de Milhas** — monitora feeds de notícias (ex: Passageiro de Primeira) e alerta sobre promoções de milhas
-- 🏷️ **Ofertas do Dia** — busca ofertas de passagens e pacotes em feeds especializados
+- 📰 **Notícias de Milhas com IA** — monitora feeds (Passageiro de Primeira) e usa **IA (Claude via OpenRouter)** para resumir os artigos automaticamente
+- 🏷️ **Ofertas do Dia** — busca ofertas de passagens e pacotes no feed "Quero Viajar na Faixa"
 - 💚 **Health check diário** — envia uma mensagem no Telegram confirmando que o tracker rodou
 - 🔒 **Webhook seguro** — comandos aceitos apenas do `TELEGRAM_CHAT_ID` autorizado
 - 🧪 **Testes com cobertura** — CI bloqueia PRs com cobertura abaixo de 80%
@@ -27,13 +27,12 @@ Monitora passagens aéreas saindo de Brasília (BSB) e envia alertas no Telegram
 
 ## Stack
 
-- **Node.js 22 + TypeScript** com `ts-node`
+- **Node.js 22 + TypeScript** (uso de `node:sqlite` nativo)
 - **APIs**: Apify (primária) → RapidAPI/Skyscanner (fallback)
+- **IA**: OpenRouter (Claude/Alpha) para resumos automáticos de notícias
+- **Persistência**: SQLite (histórico) e JSON (notícias/ofertas vistas)
 - **Notificações**: Telegram Bot
-- **Webhook Server**: Servidor HTTP nativo para processar comandos do Telegram
-- **Histórico**: SQLite via `node:sqlite` (nativo no Node.js 22+)
-- **Testes**: Jest + `axios-mock-adapter`, cobertura ≥ 80%
-- **CI/CD**: GitHub Actions — CI em todo push/PR, tracker rodando 2x ao dia (08h e 20h BRT)
+- **CI/CD**: GitHub Actions — execuções agendadas e persistência automática no Git
 
 ---
 
@@ -83,6 +82,7 @@ npm test -- --coverage  # testes + relatório de cobertura
 | `TELEGRAM_BOT_TOKEN` | Token do bot no Telegram |
 | `TELEGRAM_CHAT_ID` | ID do chat/grupo para receber alertas |
 | `DESTINATIONS` | Destinos separados por vírgula (ex: `GRU,SDL,FOR`) |
+| `OPENROUTER_API_KEY` | (Opcional) Chave da OpenRouter para resumos de notícias com IA |
 
 ### Opcionais
 
