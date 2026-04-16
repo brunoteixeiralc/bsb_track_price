@@ -10,6 +10,7 @@ function formatError(err: unknown): string {
 }
 
 const RSS_URL = "https://passageirodeprimeira.com/categorias/noticias/feed/";
+const RSS_URL_PROMOCOES = "https://passageirodeprimeira.com/categorias/promocoes/feed/";
 const SEEN_DB_PATH = path.join(process.cwd(), "data", "news-seen.json");
 const MAX_SEEN = 300; // máximo de GUIDs armazenados
 const TIMEOUT_MS = 15_000;
@@ -214,10 +215,18 @@ export async function trackRssFeed(feedConfig: FeedConfig): Promise<void> {
 // ── Entry point do tracker de notícias (milhas) ──────────────────────────────
 
 export async function runNewsTracker(): Promise<void> {
-  return trackRssFeed({
+  // Feed 1 — categoria "notícias"
+  await trackRssFeed({
     rssUrl: RSS_URL,
     keywords: MILHA_KEYWORDS,
     seenDbPath: SEEN_DB_PATH,
     feedName: "news",
+  });
+  // Feed 2 — categoria "promoções" (mesmo banco → sem duplicatas entre feeds)
+  await trackRssFeed({
+    rssUrl: RSS_URL_PROMOCOES,
+    keywords: MILHA_KEYWORDS,
+    seenDbPath: SEEN_DB_PATH,
+    feedName: "news-promocoes",
   });
 }
