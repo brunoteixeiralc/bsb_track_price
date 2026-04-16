@@ -5,9 +5,22 @@ process.env.TURSO_AUTH_TOKEN = "test-token";
 // Mock global do Cliente do Turso para evitar conexões reais
 jest.mock("@libsql/client", () => ({
   createClient: jest.fn().mockReturnValue({
-    execute: jest.fn().mockResolvedValue({ 
-      rows: [{ n: 0, count: 0 }], // Retorna uma linha padrão para COUNT(*)
-      rowsAffected: 0 
+    execute: jest.fn().mockImplementation(async (stmt) => {
+      const sql = typeof stmt === "string" ? stmt : stmt.sql;
+      
+      // Se for uma query de contagem, retorna 0
+      if (sql.toUpperCase().includes("COUNT(*)")) {
+        return { 
+          rows: [{ n: 0, count: 0 }], 
+          rowsAffected: 0 
+        };
+      }
+      
+      // Para qualquer outra busca (SELECT *), retorna vazio
+      return { 
+        rows: [], 
+        rowsAffected: 0 
+      };
     }),
     batch: jest.fn().mockResolvedValue([]),
     close: jest.fn(),
