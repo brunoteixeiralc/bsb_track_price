@@ -7,3 +7,4 @@ coverage/*
 Thumbs.db
 data/*.db
 data/*.json
+ARCHITECTURE.md
