@@ -8,6 +8,9 @@ async function main(): Promise<void> {
   console.log("=".repeat(50));
 
   try {
+    const { initTables } = await import("./services/db");
+    await initTables();
+
     await runTracker();
 
     if (isSunday()) {

@@ -1,288 +1,111 @@
-import axios, { isAxiosError } from "axios";
+import axios from "axios";
 import { config } from "../config";
-import { Flight, TripType, WeeklyRouteSummary } from "../types";
-import { formatBRL, convertToBRL } from "./currency";
-import { calcTrend, bestDayOfWeek } from "../utils/priceHistory";
-
-function formatError(err: unknown): string {
-  if (isAxiosError(err)) {
-    return `HTTP ${err.response?.status ?? "?"}: ${err.message}`;
-  }
-  return err instanceof Error ? err.message : String(err);
-}
-
-function escapeMd(text: string | undefined): string {
-  if (!text) return "";
-  return text.replace(/([*_`[\]()])/g, "\\$1");
-}
+import { Flight } from "../types";
+import { formatBRL } from "./currency";
 
 const BASE_URL = `https://api.telegram.org/bot${config.telegram.botToken}`;
-const TIMEOUT_MS = 10_000;
+const TIMEOUT_MS = 15_000;
 
-const PRICE_LEVEL_PT: Record<"low" | "typical" | "high", string> = {
-  low: "BAIXO",
-  typical: "TÍPICO",
-  high: "ALTO",
-};
-
-function formatDate(dateStr: string): string {
-  const [year, month, day] = dateStr.split("-");
-  return `${day}/${month}/${year}`;
+/** Envia mensagem genérica via Telegram */
+export async function sendMessage(text: string, targetChatId?: string | number): Promise<void> {
+  const chatId = targetChatId || config.telegram.chatId;
+  await axios.post(`${BASE_URL}/sendMessage`, {
+    chat_id: chatId,
+    text,
+    parse_mode: "Markdown",
+    disable_web_page_preview: true,
+  }, { timeout: TIMEOUT_MS });
 }
 
-async function buildMessage(flight: Flight, lowLevelAlert = false): Promise<string> {
-  const tripLabel = flight.tripType === "round-trip" ? "🔄 Ida e Volta" : "✈️ Somente Ida";
+/** Confirmação de que o rastreador está funcionando */
+export async function sendHealthCheck(targetChatId?: string | number): Promise<void> {
+  const now = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  await sendMessage(`💚 *Tracker ativo* — ${now}`, targetChatId);
+}
 
+/** Alerta de uma passagem específica encontrada */
+export async function sendFlightAlert(flight: Flight, isHistoricLow = false, targetChatId?: string | number): Promise<void> {
+  const emoji = isHistoricLow ? "🔥" : "✈️";
+  const title = isHistoricLow ? "*Nível de preço histórico BAIXO!*" : "*Passagem barata encontrada!*";
+  
   const lines = [
-    lowLevelAlert ? `📉 *Preço em nível histórico BAIXO!*` : `✈️ *Passagem barata encontrada!*`,
-    ``,
+    `${emoji} ${title}`,
+    "",
     `🛫 *${flight.origin} → ${flight.destination}*`,
-    `🏷️ ${tripLabel}`,
-    `📅 Ida: ${formatDate(flight.departureDate)}`,
-  ];
+    `🏷️ ${flight.tripType === "round-trip" ? "🔄 Ida e Volta" : "✈️ Somente Ida"}`,
+    `📅 Ida: ${flight.departureDate}`,
+    flight.returnDate ? `📅 Volta: ${flight.returnDate}` : "",
+    flight.airline ? `🏢 ${flight.airline}` : "",
+    `💰 *${formatBRL(flight.priceBRL)}*`,
+    "",
+    `🔗 [Ver passagem](${flight.link})`,
+    `_Fonte: ${flight.source}_`,
+  ].filter(Boolean);
 
-  if (flight.returnDate) {
-    lines.push(`📅 Volta: ${formatDate(flight.returnDate)}`);
-  }
-
-  if (flight.airline) {
-    lines.push(`🏢 ${escapeMd(flight.airline)}`);
-  }
-
-  if (flight.flightNumber || flight.airplane) {
-    const parts = [escapeMd(flight.flightNumber), escapeMd(flight.airplane)].filter(Boolean);
-    lines.push(`🛩️ ${parts.join(" · ")}`);
-  }
-
-  if (flight.departureTime) {
-    lines.push(`🕐 Partida: ${flight.departureTime}`);
-  }
-
-  lines.push(`💰 *${formatBRL(flight.priceBRL)}*`);
-
-  if (flight.source === "apify" && flight.priceInsights) {
-    const pi = flight.priceInsights;
-    const levelLabel = PRICE_LEVEL_PT[pi.priceLevel];
-    const [rangeMinUSD, rangeMaxUSD] = pi.typicalPriceRange;
-    const rangeMinBRL = await convertToBRL(rangeMinUSD, "USD");
-    const rangeMaxBRL = await convertToBRL(rangeMaxUSD, "USD");
-
-    lines.push(``);
-    lines.push(`📊 Nível: *${levelLabel}* — faixa típica ${formatBRL(rangeMinBRL)} – ${formatBRL(rangeMaxBRL)}`);
-
-    const midpointBRL = (rangeMinBRL + rangeMaxBRL) / 2;
-    const diffPct = Math.round(((midpointBRL - flight.priceBRL) / midpointBRL) * 100);
-
-    if (diffPct > 0) {
-      lines.push(`💡 Este preço está ${diffPct}% abaixo da média histórica`);
-    } else if (diffPct < 0) {
-      lines.push(`💡 Este preço está ${Math.abs(diffPct)}% acima da média histórica`);
-    }
-
-    if (pi.priceHistory) {
-      const trend = calcTrend(pi.priceHistory);
-      if (trend) {
-        const trendEmoji =
-          trend.direction === "up" ? "📈" :
-          trend.direction === "down" ? "📉" : "➡️";
-        const sign = trend.pct > 0 ? "+" : "";
-        lines.push(`${trendEmoji} Tendência 7 dias: ${sign}${trend.pct}%`);
-      }
-
-      const best = bestDayOfWeek(pi.priceHistory);
-      if (best) {
-        lines.push(`📅 Melhor dia para comprar: *${best.dayName}*`);
-      }
-    }
-  }
-
-  lines.push(``);
-  lines.push(`🔗 [Ver passagem](${flight.link})`);
-  lines.push(``);
-  lines.push(`_Fonte: ${flight.source}_`);
-
-  return lines.join("\n");
+  await sendMessage(lines.join("\n"), targetChatId);
 }
 
-export async function sendFlightAlert(flight: Flight, lowLevelAlert = false): Promise<void> {
-  const text = await buildMessage(flight, lowLevelAlert);
-
-  try {
-    await axios.post(`${BASE_URL}/sendMessage`, {
-      chat_id: config.telegram.chatId,
-      text,
-      parse_mode: "Markdown",
-      disable_web_page_preview: false,
-    }, { timeout: TIMEOUT_MS });
-    console.log(`[telegram] Alerta enviado: ${flight.origin}→${flight.destination} ${formatBRL(flight.priceBRL)}`);
-  } catch (err) {
-    console.error(`[telegram] Erro ao enviar mensagem: ${formatError(err)}`);
-    throw err;
-  }
-}
-
-export async function sendAntiSpamNotice(route: string, currentBRL: number, previousBRL: number): Promise<void> {
-  const text = `🔕 *${route}* — preço não caiu ≥5%\n💰 Atual: ${formatBRL(currentBRL)} | Anterior: ${formatBRL(previousBRL)}`;
-  try {
-    await axios.post(`${BASE_URL}/sendMessage`, {
-      chat_id: config.telegram.chatId,
-      text,
-      parse_mode: "Markdown",
-    }, { timeout: TIMEOUT_MS });
-  } catch (err) {
-    console.error(`[telegram] Erro ao enviar aviso anti-spam: ${formatError(err)}`);
-  }
-}
-
-export async function sendErrorAlert(route: string, details: string): Promise<void> {
-  const now = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-  const text = [
-    `⚠️ *${route}* — falha em todas as fontes de dados.`,
-    `📋 ${details}`,
-    `🕐 ${now}`,
-  ].join("\n");
-
-  try {
-    await axios.post(`${BASE_URL}/sendMessage`, {
-      chat_id: config.telegram.chatId,
-      text,
-      parse_mode: "Markdown",
-    }, { timeout: TIMEOUT_MS });
-    console.log(`[telegram] Alerta de erro enviado para ${route}`);
-  } catch (err) {
-    console.error(`[telegram] Erro ao enviar alerta de falha: ${formatError(err)}`);
-  }
-}
-
-export async function sendHealthCheck(): Promise<void> {
-  const now = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-  const text = `💚 *Tracker ativo* — ${now}`;
-  try {
-    await axios.post(`${BASE_URL}/sendMessage`, {
-      chat_id: config.telegram.chatId,
-      text,
-      parse_mode: "Markdown",
-    }, { timeout: TIMEOUT_MS });
-    console.log("[telegram] Health check enviado.");
-  } catch (err) {
-    console.error(`[telegram] Erro ao enviar health check: ${formatError(err)}`);
-  }
+export async function sendSummary(belowThreshold: number, total: number, route: string, targetChatId?: string | number): Promise<void> {
+  // Opcional: resumo silencioso ou apenas logs
+  console.log(`[telegram] Resumo ${route}: ${belowThreshold} de ${total} voos abaixo do threshold.`);
 }
 
 export async function sendDateRangeSummary(
-  route: string,
-  datesChecked: number,
-  bestFlight: Flight | null,
+  route: string, 
+  daysChecked: number, 
+  bestFlight: Flight | null, 
   threshold: number,
-  tripType: TripType = "one-way",
-  startDate?: string,
-  endDate?: string,
+  tripType: string,
+  start: string,
+  end: string,
+  targetChatId?: string | number
 ): Promise<void> {
-  const tripLabel = tripType === "round-trip" ? "🔄 Ida e Volta" : "✈️ Somente Ida";
-  const periodLabel = startDate && endDate ? ` — ${formatDate(startDate)} a ${formatDate(endDate)}` : "";
-  const noBest = !bestFlight || bestFlight.priceBRL > threshold;
-  const text = noBest
-    ? `🗓️ *${route}* (${tripLabel})${periodLabel} — ${datesChecked} data(s) verificada(s). Nenhum voo abaixo de ${formatBRL(threshold)}.`
-    : `🗓️ *${route}* (${tripLabel})${periodLabel} — ${datesChecked} data(s) verificada(s).\n💰 Melhor: *${formatBRL(bestFlight!.priceBRL)}* em ${formatDate(bestFlight!.departureDate)}${bestFlight!.airline ? ` (${bestFlight!.airline})` : ""}`;
+  if (!bestFlight) return;
 
-  try {
-    await axios.post(`${BASE_URL}/sendMessage`, {
-      chat_id: config.telegram.chatId,
-      text,
-      parse_mode: "Markdown",
-    }, { timeout: TIMEOUT_MS });
-  } catch (err) {
-    console.error(`[telegram] Erro ao enviar resumo de intervalo: ${formatError(err)}`);
-  }
+  const lines = [
+    `🗓️ *${route}* (${tripType === "round-trip" ? "🔄 Ida e Volta" : "✈️ Somente Ida"})`,
+    `Período: ${start} até ${end}`,
+    `${daysChecked} data(s) verificada(s).`,
+    "",
+    bestFlight.priceBRL <= threshold
+      ? `✅ Melhor preço: *${formatBRL(bestFlight.priceBRL)}* em ${bestFlight.departureDate}`
+      : `ℹ️ Mínimo encontrado: ${formatBRL(bestFlight.priceBRL)} em ${bestFlight.departureDate} (acima de ${formatBRL(threshold)})`,
+  ];
+
+  await sendMessage(lines.join("\n"), targetChatId);
 }
 
-export async function sendSummary(found: number, checked: number, route?: string): Promise<void> {
-  const prefix = route ? `${route} — ` : "";
-  const text = found === 0
-    ? `🔍 ${prefix}Nenhuma passagem abaixo do threshold (${checked} opções verificadas).`
-    : `✅ ${prefix}${found} passagem(ns) encontrada(s) abaixo do threshold!`;
-
-  try {
-    await axios.post(`${BASE_URL}/sendMessage`, {
-      chat_id: config.telegram.chatId,
-      text,
-    }, { timeout: TIMEOUT_MS });
-  } catch (err) {
-    console.error(`[telegram] Erro ao enviar resumo: ${formatError(err)}`);
-  }
+export async function sendErrorAlert(route: string, message: string, targetChatId?: string | number): Promise<void> {
+  await sendMessage(`❌ *Erro no Tracker (${route})*\n${message}`, targetChatId);
 }
 
-export async function sendWeeklyReport(summaries: WeeklyRouteSummary[]): Promise<void> {
-  const now = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+export async function sendAntiSpamNotice(route: string, current: number, previous: number, targetChatId?: string | number): Promise<void> {
+  // Ativado apenas em debug se quiser ver por que não notificou
+  console.log(`[anti-spam] ${route}: ${formatBRL(current)} não é ≥5% menor que ${formatBRL(previous)}`);
+}
 
-  if (summaries.length === 0) {
-    const text = `📊 *Relatório Semanal* — ${now}\n\nNenhuma rota monitorada nesta semana.`;
-    try {
-      await axios.post(`${BASE_URL}/sendMessage`, {
-        chat_id: config.telegram.chatId,
-        text,
-        parse_mode: "Markdown",
-      }, { timeout: TIMEOUT_MS });
-      console.log("[telegram] Relatório semanal enviado (sem rotas).");
-    } catch (err) {
-      console.error(`[telegram] Erro ao enviar relatório semanal: ${formatError(err)}`);
-      throw err;
-    }
-    return;
-  }
-
-  const lines: string[] = [
-    `📊 *Relatório Semanal de Passagens*`,
-    `📅 ${now}`,
-    ``,
+export async function sendWeeklyReport(summaries: any[], targetChatId?: string | number): Promise<void> {
+  const lines = [
+    "📊 *Relatório Semanal de Passagens*",
+    `📅 ${new Date().toLocaleString("pt-BR")}`,
+    "",
   ];
 
   for (const s of summaries) {
-    const trendEmoji =
-      s.trend === "up" ? "📈" :
-      s.trend === "down" ? "📉" :
-      s.trend === "stable" ? "➡️" : "❓";
-
+    const trendEmoji = s.trend === "down" ? "📉" : s.trend === "up" ? "📈" : "➡️";
     lines.push(`✈️ *${s.route}*`);
-
-    if (s.currentWeekMin !== null) {
-      lines.push(`💰 Menor preço esta semana: *${formatBRL(s.currentWeekMin)}*`);
-    } else {
-      lines.push(`💰 Sem dados esta semana`);
-    }
-
-    if (s.previousWeekMin !== null) {
-      lines.push(`📊 Semana anterior: ${formatBRL(s.previousWeekMin)}`);
-    } else {
-      lines.push(`📊 Semana anterior: sem dados`);
-    }
-
-    if (s.currentWeekMin !== null && s.previousWeekMin !== null) {
+    lines.push(`💰 Min esta semana: ${s.currentWeekMin ? formatBRL(s.currentWeekMin) : "sem dados"}`);
+    lines.push(`📊 Semana anterior: ${s.previousWeekMin ? formatBRL(s.previousWeekMin) : "sem dados"}`);
+    if (s.currentWeekMin && s.previousWeekMin) {
       const diff = s.currentWeekMin - s.previousWeekMin;
-      const pct = ((diff / s.previousWeekMin) * 100).toFixed(1);
-      const sign = diff > 0 ? "+" : "";
-      lines.push(`${trendEmoji} Variação: ${sign}${pct}% (${sign}${formatBRL(diff)})`);
+      const pct = (diff / s.previousWeekMin) * 100;
+      lines.push(`${trendEmoji} Variação: ${pct > 0 ? "+" : ""}${pct.toFixed(1)}% (${formatBRL(diff)})`);
     } else {
-      lines.push(`${trendEmoji} Tendência: sem dados suficientes para comparar`);
+      lines.push(`${trendEmoji} Tendência: estável ou sem dados.`);
     }
-
-    lines.push(``);
+    lines.push("");
   }
 
-  const totalChecks = summaries.reduce((acc, s) => acc + s.checksThisWeek, 0);
-  lines.push(`_${totalChecks} verificação(ões) realizadas esta semana_`);
-
-  const text = lines.join("\n");
-
-  try {
-    await axios.post(`${BASE_URL}/sendMessage`, {
-      chat_id: config.telegram.chatId,
-      text,
-      parse_mode: "Markdown",
-    }, { timeout: TIMEOUT_MS });
-    console.log(`[telegram] Relatório semanal enviado com ${summaries.length} rota(s).`);
-  } catch (err) {
-    console.error(`[telegram] Erro ao enviar relatório semanal: ${formatError(err)}`);
-    throw err;
-  }
+  lines.push(`_${summaries.length} rota(s) monitorada(s)_`);
+  await sendMessage(lines.join("\n"), targetChatId);
 }

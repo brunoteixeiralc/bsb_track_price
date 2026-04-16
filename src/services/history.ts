@@ -1,104 +1,73 @@
-import { DatabaseSync } from "node:sqlite";
-import path from "path";
-import fs from "fs";
+import { getDb } from "./db";
 import { HistoryEntry, WeeklyRouteSummary } from "../types";
 
-const DB_FILE = path.resolve(process.cwd(), "data", "history.db");
-
-let _db: DatabaseSync | null = null;
-
-function getDb(): DatabaseSync {
-  if (!_db) {
-    fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
-    _db = new DatabaseSync(DB_FILE);
-    _db.exec(`
-      CREATE TABLE IF NOT EXISTS history (
-        id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp  TEXT    NOT NULL,
-        origin     TEXT    NOT NULL,
-        destination TEXT   NOT NULL,
-        departureDate TEXT NOT NULL,
-        returnDate TEXT,
-        totalFound INTEGER NOT NULL,
-        cheapestPriceBRL REAL,
-        flights    TEXT    NOT NULL DEFAULT '[]'
-      )
-    `);
-  }
-  return _db;
-}
-
-/** Fecha a conexão com o banco (usado em testes para reset entre casos). */
-export function closeDb(): void {
-  if (_db) {
-    _db.close();
-    _db = null;
-  }
-}
-
-export function loadHistory(): HistoryEntry[] {
+export async function loadHistory(): Promise<HistoryEntry[]> {
   const db = getDb();
-  const rows = db.prepare("SELECT * FROM history ORDER BY id ASC").all() as Array<Record<string, unknown>>;
-  return rows.map(rowToEntry);
+  const result = await db.execute("SELECT * FROM history ORDER BY id ASC");
+  return result.rows.map(rowToEntry);
 }
 
-export function getLastCheapestPrice(
+export async function getLastCheapestPrice(
   origin: string,
   destination: string,
   departureDate: string
-): number | null {
+): Promise<number | null> {
   const db = getDb();
-  const row = db
-    .prepare(
-      `SELECT cheapestPriceBRL FROM history
-       WHERE origin = ? AND destination = ? AND departureDate = ?
-         AND cheapestPriceBRL IS NOT NULL
-       ORDER BY id DESC
-       LIMIT 1`
-    )
-    .get(origin, destination, departureDate) as { cheapestPriceBRL: number } | undefined;
+  const result = await db.execute({
+    sql: `SELECT cheapestPriceBRL FROM history
+          WHERE origin = ? AND destination = ? AND departureDate = ?
+            AND cheapestPriceBRL IS NOT NULL
+          ORDER BY id DESC
+          LIMIT 1`,
+    args: [origin, destination, departureDate],
+  });
 
-  return row ? row.cheapestPriceBRL : null;
+  const row = result.rows[0];
+  return row ? (row.cheapestPriceBRL as number) : null;
 }
 
-export function pruneOldHistory(retentionDays: number): number {
+export async function pruneOldHistory(retentionDays: number): Promise<number> {
   const db = getDb();
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - retentionDays);
-  const result = db
-    .prepare("DELETE FROM history WHERE timestamp < ?")
-    .run(cutoff.toISOString()) as { changes: number };
-  return result.changes;
+  
+  const result = await db.execute({
+    sql: "DELETE FROM history WHERE timestamp < ?",
+    args: [cutoff.toISOString()],
+  });
+  
+  return Number(result.rowsAffected);
 }
 
-export function appendHistory(entry: HistoryEntry, retentionDays = 365): void {
+export async function appendHistory(entry: HistoryEntry, retentionDays = 365): Promise<void> {
   const db = getDb();
-  db.prepare(
-    `INSERT INTO history
-       (timestamp, origin, destination, departureDate, returnDate, totalFound, cheapestPriceBRL, flights)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    entry.timestamp,
-    entry.origin,
-    entry.destination,
-    entry.departureDate,
-    entry.returnDate ?? null,
-    entry.totalFound,
-    entry.cheapestPriceBRL ?? null,
-    JSON.stringify(entry.flights)
-  );
+  await db.execute({
+    sql: `INSERT INTO history
+           (timestamp, origin, destination, departureDate, returnDate, totalFound, cheapestPriceBRL, flights)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [
+      entry.timestamp,
+      entry.origin,
+      entry.destination,
+      entry.departureDate,
+      entry.returnDate ?? null,
+      entry.totalFound,
+      entry.cheapestPriceBRL ?? null,
+      JSON.stringify(entry.flights),
+    ],
+  });
 
-  const pruned = pruneOldHistory(retentionDays);
+  const pruned = await pruneOldHistory(retentionDays);
   if (pruned > 0) {
     console.log(`[history] Removidas ${pruned} entrada(s) com mais de ${retentionDays} dia(s).`);
   }
 
-  const count = (db.prepare("SELECT COUNT(*) as n FROM history").get() as { n: number }).n;
+  const countResult = await db.execute("SELECT COUNT(*) as n FROM history");
+  const count = countResult.rows[0].n;
   console.log(`[history] ${count} entrada(s) no histórico.`);
 }
 
-export function getWeeklySummary(now: Date = new Date()): WeeklyRouteSummary[] {
-  // Current week: last 7 days up to end of today
+export async function getWeeklySummary(now: Date = new Date()): Promise<WeeklyRouteSummary[]> {
   const todayEnd = new Date(now);
   todayEnd.setHours(23, 59, 59, 999);
 
@@ -106,42 +75,26 @@ export function getWeeklySummary(now: Date = new Date()): WeeklyRouteSummary[] {
   currentWeekStart.setDate(currentWeekStart.getDate() - 6);
   currentWeekStart.setHours(0, 0, 0, 0);
 
-  // Previous week: the 7 days before current week
+  const previousWeekStart = new Date(currentWeekStart);
+  previousWeekStart.setDate(previousWeekStart.getDate() - 7);
+  previousWeekStart.setHours(0, 0, 0, 0);
   const previousWeekEnd = new Date(currentWeekStart);
   previousWeekEnd.setMilliseconds(previousWeekEnd.getMilliseconds() - 1);
 
-  const previousWeekStart = new Date(previousWeekEnd);
-  previousWeekStart.setDate(previousWeekStart.getDate() - 6);
-  previousWeekStart.setHours(0, 0, 0, 0);
-
   const db = getDb();
-  const rows = db
-    .prepare(
-      `SELECT origin, destination, timestamp, cheapestPriceBRL
-       FROM history
-       WHERE timestamp >= ? AND timestamp <= ?
-       ORDER BY id ASC`
-    )
-    .all(previousWeekStart.toISOString(), todayEnd.toISOString()) as Array<{
-    origin: string;
-    destination: string;
-    timestamp: string;
-    cheapestPriceBRL: number | null;
-  }>;
+  const result = await db.execute({
+    sql: `SELECT origin, destination, timestamp, cheapestPriceBRL
+          FROM history
+          WHERE timestamp >= ? AND timestamp <= ?
+          ORDER BY id ASC`,
+    args: [previousWeekStart.toISOString(), todayEnd.toISOString()],
+  });
 
-  const routeMap = new Map<
-    string,
-    {
-      origin: string;
-      destination: string;
-      currentPrices: number[];
-      previousPrices: number[];
-      checksThisWeek: number;
-    }
-  >();
+  const rows = result.rows;
+  const routeMap = new Map<string, any>();
 
   for (const row of rows) {
-    const ts = new Date(row.timestamp);
+    const ts = new Date(row.timestamp as string);
     const routeKey = `${row.origin}→${row.destination}`;
 
     if (!routeMap.has(routeKey)) {
@@ -171,10 +124,8 @@ export function getWeeklySummary(now: Date = new Date()): WeeklyRouteSummary[] {
   const summaries: WeeklyRouteSummary[] = [];
 
   for (const [route, data] of routeMap.entries()) {
-    const currentWeekMin =
-      data.currentPrices.length > 0 ? Math.min(...data.currentPrices) : null;
-    const previousWeekMin =
-      data.previousPrices.length > 0 ? Math.min(...data.previousPrices) : null;
+    const currentWeekMin = data.currentPrices.length > 0 ? Math.min(...data.currentPrices) : null;
+    const previousWeekMin = data.previousPrices.length > 0 ? Math.min(...data.previousPrices) : null;
 
     let trend: "up" | "down" | "stable" | "unknown" = "unknown";
     if (currentWeekMin !== null && previousWeekMin !== null) {
@@ -198,17 +149,15 @@ export function getWeeklySummary(now: Date = new Date()): WeeklyRouteSummary[] {
   return summaries.sort((a, b) => a.route.localeCompare(b.route));
 }
 
-// ---------- helpers ----------
-
-function rowToEntry(row: Record<string, unknown>): HistoryEntry {
+function rowToEntry(row: any): HistoryEntry {
   return {
     timestamp: row.timestamp as string,
     origin: row.origin as string,
     destination: row.destination as string,
     departureDate: row.departureDate as string,
     returnDate: row.returnDate as string | undefined,
-    totalFound: row.totalFound as number,
-    cheapestPriceBRL: row.cheapestPriceBRL as number | null,
+    totalFound: Number(row.totalFound),
+    cheapestPriceBRL: row.cheapestPriceBRL !== null ? Number(row.cheapestPriceBRL) : null,
     flights: JSON.parse(row.flights as string),
   };
 }

@@ -2,52 +2,117 @@ import { config } from "../config";
 import { Flight, SearchParams } from "../types";
 import { searchWithApify } from "../apis/apify";
 import { searchWithRapidAPI } from "../apis/rapidapi";
-import { sendFlightAlert, sendSummary, sendDateRangeSummary, sendErrorAlert, sendAntiSpamNotice } from "./telegram";
+import { sendFlightAlert, sendDateRangeSummary, sendErrorAlert } from "./telegram";
 import { appendHistory, getLastCheapestPrice } from "./history";
 import { withRetry } from "../utils/retry";
-import { generateDateRange } from "../utils/dates";
+import { getAllActiveAlerts, UserAlert } from "./user";
+import { formatBRL } from "./currency";
 
 export async function runTracker(): Promise<void> {
-  const dates = generateDateRange(config.search.departureDate, config.search.dateRangeDays);
+  console.log("[tracker] Iniciando rodada de verificação...");
+  
+  // 1. Coleta alertas individuais do banco
+  const userAlerts = await getAllActiveAlerts();
+  console.log(`[tracker] ${userAlerts.length} alerta(s) de usuários ativos encontrados.`);
 
+  // 2. Adiciona as rotas globais do .env como alertas do admin (você)
+  const allTasks: UserAlert[] = [...userAlerts];
+  
+  // Para manter compatibilidade com seu uso atual
   for (const origin of config.search.origins) {
     for (const destination of config.search.destinations) {
-      // Ignora rota origem→origem (não faz sentido buscar voo para o mesmo aeroporto)
       if (origin === destination) continue;
-
-      const params: SearchParams = {
+      allTasks.push({
+        chat_id: config.telegram.chatId,
         origin,
         destination,
-        departureDate: dates[0],
-        returnDate: config.search.returnDate,
-        tripType: config.search.tripType,
-      };
+        departure_date: config.search.departureDate, // usa a lógica de offset do config
+        return_date: config.search.returnDate,
+        trip_type: config.search.tripType,
+        max_price_brl: config.search.maxPriceBRL,
+        is_active: true
+      });
+    }
+  }
 
-      if (dates.length === 1) {
-        await searchAndNotify(params);
-      } else {
-        await searchDateRange(params, dates);
-      }
+  // 3. Executa cada busca
+  // Dica futurista: Aqui poderíamos agrupar por rota/data para economizar API, 
+  // mas vamos focar na funcionalidade primeiro.
+  for (const alert of allTasks) {
+    try {
+      await processAlert(alert);
+    } catch (err) {
+      console.error(`[tracker] Erro no alerta ${alert.origin}→${alert.destination}:`, err);
+    }
+  }
+  
+  console.log("[tracker] Rodada de verificação finalizada.");
+}
+
+async function processAlert(alert: UserAlert): Promise<void> {
+  const params: SearchParams = {
+    origin: alert.origin,
+    destination: alert.destination,
+    departureDate: alert.departure_date,
+    returnDate: alert.return_date,
+    tripType: alert.trip_type as any
+  };
+
+  const route = `${alert.origin}→${alert.destination}`;
+  console.log(`[tracker] Processando: ${route} para Usuário ${alert.chat_id} (Limite: ${alert.max_price_brl})`);
+
+  let flights: Flight[] = [];
+  try {
+    flights = await fetchFlights(params);
+  } catch (err) {
+    await sendErrorAlert(route, `Falha técnica ao buscar voos.`, alert.chat_id);
+    return;
+  }
+
+  // Aplica filtros e salva no histórico
+  flights = applyAdvancedFilters(flights);
+  
+  const currentCheapest = flights.length > 0 ? Math.min(...flights.map(f => f.priceBRL)) : null;
+
+  await appendHistory({
+    timestamp: new Date().toISOString(),
+    origin: alert.origin,
+    destination: alert.destination,
+    departureDate: alert.departure_date,
+    returnDate: alert.return_date,
+    totalFound: flights.length,
+    cheapestPriceBRL: currentCheapest,
+    flights: flights.map(f => ({
+      airline: f.airline,
+      priceBRL: f.priceBRL,
+      departureTime: f.departureTime,
+      link: f.link,
+      source: f.source
+    }))
+  });
+
+  if (currentCheapest && currentCheapest <= alert.max_price_brl) {
+    // Verifica anti-spam (só avisa se o preço for menor que o anterior ou se for a primeira vez)
+    const lastPrice = await getLastCheapestPrice(alert.origin, alert.destination, alert.departure_date);
+    
+    // Se o preço não caiu pelo menos 5%, a gente pula para não encher o saco do usuário
+    // Exceto se for a primeira vez (lastPrice === null)
+    if (!lastPrice || currentCheapest <= lastPrice * config.search.priceDropThreshold) {
+      const bestFlight = flights.sort((a,b) => a.priceBRL - b.priceBRL)[0];
+      await sendFlightAlert(bestFlight, false, alert.chat_id);
     }
   }
 }
 
 async function fetchFlights(params: SearchParams): Promise<Flight[]> {
   try {
-    const flights = await withRetry(
+    return await withRetry(
       () => searchWithApify(params),
-      3,
-      2000,
-      (attempt, err) =>
-        console.warn(`[tracker] Apify tentativa ${attempt}/3 falhou:`, (err as Error).message)
+      2,
+      2000
     );
-    console.log(`[tracker] Apify retornou ${flights.length} voo(s)`);
-    return flights;
   } catch {
-    console.warn("[tracker] Apify falhou após 3 tentativas, tentando RapidAPI...");
-    const flights = await searchWithRapidAPI(params);
-    console.log(`[tracker] RapidAPI retornou ${flights.length} voo(s)`);
-    return flights;
+    return await searchWithRapidAPI(params);
   }
 }
 
@@ -56,218 +121,13 @@ function applyAdvancedFilters(flights: Flight[]): Flight[] {
   let filtered = flights;
 
   if (airlinesWhitelist.length > 0) {
-    const before = filtered.length;
-    filtered = filtered.filter((f) => {
-      if (!f.airline) return false;
-      return airlinesWhitelist.some((a) =>
-        f.airline!.toUpperCase().includes(a.toUpperCase())
-      );
-    });
-    const removed = before - filtered.length;
-    if (removed > 0) {
-      console.log(
-        `[tracker] Filtro AIRLINES_WHITELIST (${airlinesWhitelist.join(",")}): removeu ${removed} voo(s), restaram ${filtered.length}`
-      );
-    }
+    filtered = filtered.filter(f => f.airline && airlinesWhitelist.some(a => f.airline!.includes(a)));
   }
-
   if (maxStops !== undefined) {
-    const before = filtered.length;
-    filtered = filtered.filter(
-      (f) => f.stops !== undefined && f.stops <= maxStops
-    );
-    const removed = before - filtered.length;
-    if (removed > 0) {
-      console.log(
-        `[tracker] Filtro MAX_STOPS=${maxStops}: removeu ${removed} voo(s), restaram ${filtered.length}`
-      );
-    }
+    filtered = filtered.filter(f => f.stops !== undefined && f.stops <= maxStops);
   }
-
   if (maxDurationHours !== undefined) {
-    const maxMinutes = maxDurationHours * 60;
-    const before = filtered.length;
-    filtered = filtered.filter(
-      (f) => f.durationMinutes !== undefined && f.durationMinutes <= maxMinutes
-    );
-    const removed = before - filtered.length;
-    if (removed > 0) {
-      console.log(
-        `[tracker] Filtro MAX_DURATION_HOURS=${maxDurationHours}: removeu ${removed} voo(s), restaram ${filtered.length}`
-      );
-    }
+    filtered = filtered.filter(f => f.durationMinutes !== undefined && f.durationMinutes <= (maxDurationHours * 60));
   }
-
   return filtered;
-}
-
-async function searchAndNotify(params: SearchParams): Promise<void> {
-  const route = `${params.origin}→${params.destination}`;
-  console.log(`[tracker] Buscando voos ${route} em ${params.departureDate}`);
-  console.log(`[tracker] Threshold: R$ ${config.search.maxPriceBRL}`);
-
-  let flights: Flight[] = [];
-
-  try {
-    flights = await fetchFlights(params);
-  } catch (err) {
-    console.error(`[tracker] Ambas as APIs falharam: ${(err as Error).message}`);
-    await sendErrorAlert(route, `Busca de ${params.departureDate} falhou. Apify e RapidAPI indisponíveis.`);
-    throw new Error("Todas as fontes de dados falharam.");
-  }
-
-  flights = applyAdvancedFilters(flights);
-
-  // Captura o preço anterior ANTES de gravar no histórico (anti-spam)
-  const previousCheapest = getLastCheapestPrice(params.origin, params.destination, params.departureDate);
-
-  appendHistory({
-    timestamp: new Date().toISOString(),
-    origin: params.origin,
-    destination: params.destination,
-    departureDate: params.departureDate,
-    returnDate: params.returnDate,
-    totalFound: flights.length,
-    cheapestPriceBRL: flights.length > 0 ? Math.min(...flights.map((f) => f.priceBRL)) : null,
-    flights: flights.map((f) => ({
-      airline: f.airline,
-      priceBRL: f.priceBRL,
-      departureTime: f.departureDate,
-      link: f.link,
-      source: f.source,
-    })),
-  }, config.search.historyRetentionDays);
-
-  const cheapFlights = flights
-    .filter((f) => f.priceBRL <= config.search.maxPriceBRL)
-    .sort((a, b) => a.priceBRL - b.priceBRL);
-
-  console.log(`[tracker] ${cheapFlights.length} voo(s) abaixo de R$ ${config.search.maxPriceBRL}`);
-
-  if (cheapFlights.length > 0) {
-    const currentCheapest = cheapFlights[0].priceBRL;
-    const priceDrop = previousCheapest === null || currentCheapest <= previousCheapest * config.search.priceDropThreshold;
-
-    if (priceDrop) {
-      if (previousCheapest !== null) {
-        console.log(`[tracker] Preço caiu de R$${previousCheapest} para R$${currentCheapest}. Enviando alertas.`);
-      } else {
-        console.log(`[tracker] Primeira busca para esta rota/data. Enviando alertas.`);
-      }
-      for (const flight of cheapFlights) {
-        await sendFlightAlert(flight);
-      }
-    } else {
-      console.log(
-        `[tracker] Anti-spam: preço não caiu ≥5% (atual R$${currentCheapest} vs anterior R$${previousCheapest}). Alerta suprimido.`
-      );
-      await sendAntiSpamNotice(route, currentCheapest, previousCheapest!);
-    }
-  }
-
-  // Alerta por price_level === "low" independente do threshold
-  const lowLevelFlights = flights
-    .filter((f) => f.priceInsights?.priceLevel === "low" && f.priceBRL > config.search.maxPriceBRL)
-    .sort((a, b) => a.priceBRL - b.priceBRL);
-
-  if (lowLevelFlights.length > 0) {
-    console.log(`[tracker] ${lowLevelFlights.length} voo(s) com nível histórico BAIXO acima do threshold. Enviando alerta.`);
-    await sendFlightAlert(lowLevelFlights[0], true);
-  }
-
-  await sendSummary(cheapFlights.length, flights.length, route);
-}
-
-async function searchDateRange(baseParams: SearchParams, dates: string[]): Promise<void> {
-  const route = `${baseParams.origin}→${baseParams.destination}`;
-  console.log(`[tracker] Varrendo ${dates.length} data(s) para ${route}...`);
-
-  const cheapestPerDate: Flight[] = [];
-  const lowLevelPerDate: Flight[] = [];
-  const previousPricePerDate = new Map<string, number | null>();
-  let apiFailures = 0;
-
-  for (const date of dates) {
-    const params: SearchParams = { ...baseParams, departureDate: date };
-    console.log(`[tracker] Buscando ${route} em ${date}`);
-
-    // Captura o preço anterior ANTES de gravar no histórico (anti-spam)
-    previousPricePerDate.set(date, getLastCheapestPrice(baseParams.origin, baseParams.destination, date));
-
-    let flights: Flight[] = [];
-    try {
-      flights = await fetchFlights(params);
-    } catch (err) {
-      apiFailures++;
-      console.warn(`[tracker] ${route} em ${date} falhou, pulando: ${(err as Error).message}`);
-      continue;
-    }
-
-    flights = applyAdvancedFilters(flights);
-
-    appendHistory({
-      timestamp: new Date().toISOString(),
-      origin: params.origin,
-      destination: params.destination,
-      departureDate: date,
-      returnDate: params.returnDate,
-      totalFound: flights.length,
-      cheapestPriceBRL: flights.length > 0 ? Math.min(...flights.map((f) => f.priceBRL)) : null,
-      flights: flights.map((f) => ({
-        airline: f.airline,
-        priceBRL: f.priceBRL,
-        departureTime: f.departureDate,
-        link: f.link,
-        source: f.source,
-      })),
-    }, config.search.historyRetentionDays);
-
-    if (flights.length > 0) {
-      cheapestPerDate.push(flights.reduce((a, b) => (a.priceBRL < b.priceBRL ? a : b)));
-    }
-
-    // Coleta o melhor voo com price_level "low" acima do threshold nesta data
-    const cheapLowLevel = flights
-      .filter((f) => f.priceInsights?.priceLevel === "low" && f.priceBRL > config.search.maxPriceBRL)
-      .sort((a, b) => a.priceBRL - b.priceBRL)[0];
-    if (cheapLowLevel) lowLevelPerDate.push(cheapLowLevel);
-  }
-
-  if (apiFailures === dates.length) {
-    await sendErrorAlert(route, `${dates.length} data(s) verificada(s), todas falharam. Apify e RapidAPI indisponíveis.`);
-    return;
-  }
-
-  const best =
-    cheapestPerDate.length > 0
-      ? cheapestPerDate.reduce((a, b) => (a.priceBRL < b.priceBRL ? a : b))
-      : null;
-
-  if (best && best.priceBRL <= config.search.maxPriceBRL) {
-    const previousCheapest = previousPricePerDate.get(best.departureDate) ?? null;
-    const priceDrop = previousCheapest === null || best.priceBRL <= previousCheapest * config.search.priceDropThreshold;
-
-    if (priceDrop) {
-      if (previousCheapest !== null) {
-        console.log(`[tracker] Preço caiu de R$${previousCheapest} para R$${best.priceBRL} em ${best.departureDate}. Enviando alerta.`);
-      } else {
-        console.log(`[tracker] Primeira busca para esta rota/data. Enviando alerta.`);
-      }
-      await sendFlightAlert(best);
-    } else {
-      console.log(
-        `[tracker] Anti-spam: preço não caiu ≥5% em ${best.departureDate} (atual R$${best.priceBRL} vs anterior R$${previousCheapest}). Alerta suprimido.`
-      );
-      await sendAntiSpamNotice(route, best.priceBRL, previousCheapest!);
-    }
-  }
-
-  // Alerta por price_level === "low" independente do threshold (melhor entre todas as datas)
-  if (lowLevelPerDate.length > 0) {
-    const bestLowLevel = lowLevelPerDate.reduce((a, b) => (a.priceBRL < b.priceBRL ? a : b));
-    console.log(`[tracker] Melhor voo com nível histórico BAIXO: R$${bestLowLevel.priceBRL} em ${bestLowLevel.departureDate}. Enviando alerta.`);
-    await sendFlightAlert(bestLowLevel, true);
-  }
-
-  await sendDateRangeSummary(route, dates.length, best, config.search.maxPriceBRL, config.search.tripType, dates[0], dates[dates.length - 1]);
 }
