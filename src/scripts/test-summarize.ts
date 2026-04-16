@@ -1,7 +1,7 @@
 /**
  * Smoke test da integração Claude API → resumo de artigo.
  * Pega o primeiro item do feed de notícias, busca o artigo completo,
- * gera o resumo com Claude Haiku 4.5 e loga o resultado.
+ * gera o resumo via OpenRouter (openrouter/elephant-alpha) e loga o resultado.
  * Se TELEGRAM_BOT_TOKEN estiver definido, envia o resultado ao Telegram.
  *
  * Uso: npx ts-node src/scripts/test-summarize.ts
@@ -33,8 +33,8 @@ async function sendTelegram(text: string): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("❌ ANTHROPIC_API_KEY não definida. Abortando.");
+  if (!process.env.OPENROUTER_API_KEY) {
+    console.error("❌ OPENROUTER_API_KEY não definida. Abortando.");
     process.exit(1);
   }
 
@@ -63,8 +63,8 @@ async function main(): Promise<void> {
   console.log(`✅ Texto extraído:   ${articleText.slice(0, 200).replace(/\n/g, " ")}…`);
   console.log(`   (${articleText.split(/\s+/).length} palavras)`);
 
-  // ── 3. Chamar Claude Haiku 4.5 ──────────────────────────────────────────────
-  console.log(`\n🤖 Chamando Claude Haiku 4.5...`);
+  // ── 3. Chamar OpenRouter ─────────────────────────────────────────────────────
+  console.log(`\n🤖 Chamando OpenRouter (openrouter/elephant-alpha)...`);
   const t0 = Date.now();
   const summary = await summarizeArticle(item.title, articleText);
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
@@ -81,7 +81,7 @@ async function main(): Promise<void> {
 
   // ── 4. Enviar ao Telegram ───────────────────────────────────────────────────
   const telegramMsg = [
-    `🧪 *Teste de Resumo — Claude Haiku 4.5*`,
+    `🧪 *Teste de Resumo — OpenRouter (elephant-alpha)*`,
     ``,
     `📰 *${item.title}*`,
     `🔗 [Ver artigo](${item.link})`,

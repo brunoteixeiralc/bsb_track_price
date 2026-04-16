@@ -1,5 +1,4 @@
 import axios, { isAxiosError } from "axios";
-import Anthropic from "@anthropic-ai/sdk";
 import fs from "fs";
 import path from "path";
 
@@ -16,7 +15,8 @@ const SEEN_DB_PATH = path.join(process.cwd(), "data", "news-seen.json");
 const MAX_SEEN = 300; // máximo de GUIDs armazenados
 const TIMEOUT_MS = 15_000;
 const DESCRIPTION_MAX_CHARS = 300;
-const SUMMARIZE_MODEL = "claude-haiku-4-5-20251001";
+const SUMMARIZE_MODEL = "openrouter/elephant-alpha";
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const ARTICLE_MAX_WORDS = 1500;
 
 const MILHA_KEYWORDS = [
@@ -145,7 +145,7 @@ export function saveSeenGuids(guids: Set<string>, dbPath: string = SEEN_DB_PATH)
  * Retorna false imediatamente se ANTHROPIC_API_KEY não estiver definido.
  */
 export function shouldSummarize(item: RssItem): boolean {
-  if (!process.env.ANTHROPIC_API_KEY) return false;
+  if (!process.env.OPENROUTER_API_KEY) return false;
 
   let score = 0;
   const text = `${item.title} ${item.description}`.toLowerCase();
@@ -178,23 +178,38 @@ export async function fetchArticleText(url: string): Promise<string> {
     : text;
 }
 
-/** Chama Claude Haiku 3.5 e retorna 4-5 bullet points em PT, ou null em caso de falha. */
+/** Chama OpenRouter e retorna 4-5 bullet points em PT, ou null em caso de falha. */
 export async function summarizeArticle(title: string, articleText: string): Promise<string | null> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
-  const client = new Anthropic({ apiKey });
-  const response = await client.messages.create({
-    model: SUMMARIZE_MODEL,
-    max_tokens: 300,
-    system: "Você resume artigos de viagem e programas de milhas em português. Seja direto e objetivo.",
-    messages: [{
-      role: "user",
-      content: `Artigo: "${title}"\n\n${articleText}\n\nResuma em 4-5 bullet points (•). Foque em valores, datas, condições e como participar.`,
-    }],
-  });
-  const block = response.content[0];
-  return block.type === "text" ? block.text.trim() : null;
+  const response = await axios.post(
+    OPENROUTER_URL,
+    {
+      model: SUMMARIZE_MODEL,
+      max_tokens: 300,
+      messages: [
+        {
+          role: "system",
+          content: "Você resume artigos de viagem e programas de milhas em português. Seja direto e objetivo.",
+        },
+        {
+          role: "user",
+          content: `Artigo: "${title}"\n\n${articleText}\n\nResuma em 4-5 bullet points (•). Foque em valores, datas, condições e como participar.`,
+        },
+      ],
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      timeout: TIMEOUT_MS,
+    }
+  );
+
+  const content = response.data?.choices?.[0]?.message?.content;
+  return typeof content === "string" ? content.trim() : null;
 }
 
 // ── Mensagem Telegram ────────────────────────────────────────────────────────

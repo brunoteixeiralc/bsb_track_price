@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1776347758076" clover="3.2.0">
-  <project timestamp="1776347758076" name="All files">
-    <metrics statements="821" coveredstatements="715" conditionals="350" coveredconditionals="273" methods="107" coveredmethods="92" elements="1278" coveredelements="1080" complexity="0" loc="821" ncloc="821" packages="4" files="14" classes="14"/>
+<coverage generated="1776360030875" clover="3.2.0">
+  <project timestamp="1776360030875" name="All files">
+    <metrics statements="774" coveredstatements="714" conditionals="342" coveredconditionals="273" methods="104" coveredmethods="92" elements="1220" coveredelements="1079" complexity="0" loc="774" ncloc="774" packages="3" files="13" classes="13"/>
     <package name="apis">
       <metrics statements="105" coveredstatements="98" conditionals="91" coveredconditionals="71" methods="8" coveredmethods="8"/>
       <file name="apify.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/apis/apify.ts">
@@ -116,60 +116,8 @@
         <line num="129" count="1" type="stmt"/>
       </file>
     </package>
-    <package name="scripts">
-      <metrics statements="46" coveredstatements="0" conditionals="8" coveredconditionals="0" methods="3" coveredmethods="0"/>
-      <file name="test-summarize.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/scripts/test-summarize.ts">
-        <metrics statements="46" coveredstatements="0" conditionals="8" coveredconditionals="0" methods="3" coveredmethods="0"/>
-        <line num="9" count="0" type="stmt"/>
-        <line num="10" count="0" type="stmt"/>
-        <line num="17" count="0" type="stmt"/>
-        <line num="18" count="0" type="stmt"/>
-        <line num="21" count="0" type="stmt"/>
-        <line num="22" count="0" type="stmt"/>
-        <line num="23" count="0" type="cond" truecount="0" falsecount="3"/>
-        <line num="24" count="0" type="stmt"/>
-        <line num="25" count="0" type="stmt"/>
-        <line num="27" count="0" type="stmt"/>
-        <line num="32" count="0" type="stmt"/>
-        <line num="36" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="37" count="0" type="stmt"/>
-        <line num="38" count="0" type="stmt"/>
-        <line num="42" count="0" type="stmt"/>
-        <line num="43" count="0" type="stmt"/>
-        <line num="47" count="0" type="stmt"/>
-        <line num="49" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="50" count="0" type="stmt"/>
-        <line num="51" count="0" type="stmt"/>
-        <line num="54" count="0" type="stmt"/>
-        <line num="55" count="0" type="stmt"/>
-        <line num="56" count="0" type="stmt"/>
-        <line num="57" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="58" count="0" type="stmt"/>
-        <line num="61" count="0" type="stmt"/>
-        <line num="62" count="0" type="stmt"/>
-        <line num="63" count="0" type="stmt"/>
-        <line num="64" count="0" type="stmt"/>
-        <line num="67" count="0" type="stmt"/>
-        <line num="68" count="0" type="stmt"/>
-        <line num="69" count="0" type="stmt"/>
-        <line num="70" count="0" type="stmt"/>
-        <line num="72" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="73" count="0" type="stmt"/>
-        <line num="74" count="0" type="stmt"/>
-        <line num="77" count="0" type="stmt"/>
-        <line num="78" count="0" type="stmt"/>
-        <line num="79" count="0" type="stmt"/>
-        <line num="80" count="0" type="stmt"/>
-        <line num="83" count="0" type="stmt"/>
-        <line num="95" count="0" type="stmt"/>
-        <line num="96" count="0" type="stmt"/>
-        <line num="99" count="0" type="stmt"/>
-        <line num="100" count="0" type="stmt"/>
-        <line num="101" count="0" type="stmt"/>
-      </file>
-    </package>
     <package name="services">
-      <metrics statements="623" coveredstatements="570" conditionals="237" coveredconditionals="188" methods="87" coveredmethods="75"/>
+      <metrics statements="622" coveredstatements="569" conditionals="237" coveredconditionals="188" methods="87" coveredmethods="75"/>
       <file name="currency.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/services/currency.ts">
         <metrics statements="32" coveredstatements="32" conditionals="11" coveredconditionals="7" methods="4" coveredmethods="4"/>
         <line num="1" count="10" type="stmt"/>
@@ -303,14 +251,14 @@
         <line num="204" count="8" type="stmt"/>
       </file>
       <file name="news.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/services/news.ts">
-        <metrics statements="122" coveredstatements="121" conditionals="41" coveredconditionals="33" methods="19" coveredmethods="19"/>
+        <metrics statements="121" coveredstatements="120" conditionals="41" coveredconditionals="33" methods="19" coveredmethods="19"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
-        <line num="4" count="1" type="stmt"/>
-        <line num="7" count="4" type="cond" truecount="1" falsecount="0"/>
-        <line num="8" count="4" type="cond" truecount="2" falsecount="0"/>
-        <line num="10" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="6" count="4" type="cond" truecount="1" falsecount="0"/>
+        <line num="7" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="9" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="12" count="1" type="stmt"/>
         <line num="13" count="1" type="stmt"/>
         <line num="14" count="1" type="stmt"/>
         <line num="15" count="1" type="stmt"/>
@@ -374,58 +322,57 @@
         <line num="183" count="5" type="stmt"/>
         <line num="184" count="5" type="cond" truecount="1" falsecount="0"/>
         <line num="186" count="4" type="stmt"/>
-        <line num="187" count="4" type="stmt"/>
-        <line num="196" count="3" type="stmt"/>
-        <line num="197" count="3" type="cond" truecount="2" falsecount="0"/>
-        <line num="202" count="1" type="stmt"/>
-        <line num="203" count="23" type="stmt"/>
-        <line num="204" count="23" type="cond" truecount="2" falsecount="0"/>
-        <line num="205" count="3" type="stmt"/>
-        <line num="207" count="20" type="cond" truecount="1" falsecount="0"/>
-        <line num="208" count="20" type="stmt"/>
-        <line num="210" count="23" type="stmt"/>
-        <line num="214" count="16" type="stmt"/>
-        <line num="215" count="16" type="stmt"/>
-        <line num="216" count="16" type="cond" truecount="0" falsecount="1"/>
-        <line num="217" count="16" type="cond" truecount="0" falsecount="1"/>
-        <line num="218" count="16" type="stmt"/>
-        <line num="221" count="1" type="stmt"/>
-        <line num="222" count="16" type="stmt"/>
-        <line num="223" count="16" type="stmt"/>
-        <line num="224" count="16" type="stmt"/>
-        <line num="226" count="16" type="stmt"/>
+        <line num="211" count="3" type="stmt"/>
+        <line num="212" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="217" count="1" type="stmt"/>
+        <line num="218" count="23" type="stmt"/>
+        <line num="219" count="23" type="cond" truecount="2" falsecount="0"/>
+        <line num="220" count="3" type="stmt"/>
+        <line num="222" count="20" type="cond" truecount="1" falsecount="0"/>
+        <line num="223" count="20" type="stmt"/>
+        <line num="225" count="23" type="stmt"/>
+        <line num="229" count="16" type="stmt"/>
+        <line num="230" count="16" type="stmt"/>
+        <line num="231" count="16" type="cond" truecount="0" falsecount="1"/>
+        <line num="232" count="16" type="cond" truecount="0" falsecount="1"/>
+        <line num="233" count="16" type="stmt"/>
         <line num="236" count="1" type="stmt"/>
-        <line num="237" count="18" type="stmt"/>
-        <line num="238" count="18" type="stmt"/>
-        <line num="241" count="18" type="stmt"/>
-        <line num="242" count="18" type="stmt"/>
-        <line num="246" count="16" type="stmt"/>
-        <line num="248" count="2" type="stmt"/>
-        <line num="249" count="2" type="stmt"/>
-        <line num="252" count="16" type="stmt"/>
-        <line num="253" count="16" type="stmt"/>
-        <line num="255" count="28" type="stmt"/>
-        <line num="256" count="16" type="stmt"/>
-        <line num="258" count="16" type="stmt"/>
-        <line num="259" count="25" type="stmt"/>
-        <line num="260" count="16" type="stmt"/>
-        <line num="262" count="16" type="stmt"/>
-        <line num="263" count="16" type="stmt"/>
-        <line num="265" count="16" type="cond" truecount="1" falsecount="0"/>
-        <line num="266" count="2" type="stmt"/>
-        <line num="267" count="2" type="stmt"/>
-        <line num="268" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="269" count="1" type="stmt"/>
-        <line num="271" count="1" type="stmt"/>
-        <line num="274" count="16" type="stmt"/>
-        <line num="275" count="15" type="stmt"/>
-        <line num="276" count="15" type="stmt"/>
-        <line num="278" count="1" type="stmt"/>
-        <line num="282" count="16" type="stmt"/>
-        <line num="283" count="16" type="stmt"/>
-        <line num="288" count="1" type="stmt"/>
-        <line num="290" count="6" type="stmt"/>
-        <line num="297" count="5" type="stmt"/>
+        <line num="237" count="16" type="stmt"/>
+        <line num="238" count="16" type="stmt"/>
+        <line num="239" count="16" type="stmt"/>
+        <line num="241" count="16" type="stmt"/>
+        <line num="251" count="1" type="stmt"/>
+        <line num="252" count="18" type="stmt"/>
+        <line num="253" count="18" type="stmt"/>
+        <line num="256" count="18" type="stmt"/>
+        <line num="257" count="18" type="stmt"/>
+        <line num="261" count="16" type="stmt"/>
+        <line num="263" count="2" type="stmt"/>
+        <line num="264" count="2" type="stmt"/>
+        <line num="267" count="16" type="stmt"/>
+        <line num="268" count="16" type="stmt"/>
+        <line num="270" count="28" type="stmt"/>
+        <line num="271" count="16" type="stmt"/>
+        <line num="273" count="16" type="stmt"/>
+        <line num="274" count="25" type="stmt"/>
+        <line num="275" count="16" type="stmt"/>
+        <line num="277" count="16" type="stmt"/>
+        <line num="278" count="16" type="stmt"/>
+        <line num="280" count="16" type="cond" truecount="1" falsecount="0"/>
+        <line num="281" count="2" type="stmt"/>
+        <line num="282" count="2" type="stmt"/>
+        <line num="283" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="284" count="1" type="stmt"/>
+        <line num="286" count="1" type="stmt"/>
+        <line num="289" count="16" type="stmt"/>
+        <line num="290" count="15" type="stmt"/>
+        <line num="291" count="15" type="stmt"/>
+        <line num="293" count="1" type="stmt"/>
+        <line num="297" count="16" type="stmt"/>
+        <line num="298" count="16" type="stmt"/>
+        <line num="303" count="1" type="stmt"/>
+        <line num="305" count="6" type="stmt"/>
+        <line num="312" count="5" type="stmt"/>
       </file>
       <file name="telegram.ts" path="/Users/bruno.teixeira/Downloads/bsb_price_track/src/services/telegram.ts">
         <metrics statements="129" coveredstatements="110" conditionals="67" coveredconditionals="54" methods="12" coveredmethods="10"/>

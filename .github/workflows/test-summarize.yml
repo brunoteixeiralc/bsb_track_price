@@ -27,15 +27,15 @@ jobs:
 
       - name: Check required secrets
         run: |
-          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
-            echo "❌ ANTHROPIC_API_KEY não definida em Settings → Secrets."
+          if [ -z "${{ secrets.OPENROUTER_API_KEY }}" ]; then
+            echo "❌ OPENROUTER_API_KEY não definida em Settings → Secrets."
             exit 1
           fi
-          echo "✅ ANTHROPIC_API_KEY definida."
+          echo "✅ OPENROUTER_API_KEY definida."
 
       - name: Run summarize smoke test
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: npx ts-node src/scripts/test-summarize.ts

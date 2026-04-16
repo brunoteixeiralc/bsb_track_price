@@ -3,17 +3,6 @@ import MockAdapter from "axios-mock-adapter";
 import fs from "fs";
 import path from "path";
 
-// Mock do Anthropic SDK — deve vir antes de qualquer import que o utilize
-jest.mock("@anthropic-ai/sdk", () => {
-  const mockCreate = jest.fn();
-  return {
-    __esModule: true,
-    default: jest.fn().mockImplementation(() => ({
-      messages: { create: mockCreate },
-    })),
-    _mockCreate: mockCreate, // exposto para os testes acessarem
-  };
-});
 import { parseRssItems, isMilhaRelated, isKeywordRelated, buildNewsMessage, loadSeenGuids, saveSeenGuids, runNewsTracker, trackRssFeed, shouldSummarize, fetchArticleText, summarizeArticle, RssItem } from "../services/news";
 
 // news.ts lê diretamente das env vars, sem usar config.ts
@@ -428,52 +417,46 @@ describe("trackRssFeed", () => {
   });
 });
 
-// ── Helpers para acessar o mock do Anthropic SDK ──────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const anthropicMock = require("@anthropic-ai/sdk");
-const getMockCreate = (): jest.Mock => anthropicMock._mockCreate;
-
 // ── shouldSummarize ───────────────────────────────────────────────────────────
 
 describe("shouldSummarize", () => {
   const base: RssItem = { guid: "g", title: "Título neutro", link: "https://ex.com", description: "" };
 
   afterEach(() => {
-    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.OPENROUTER_API_KEY;
   });
 
-  it("retorna false quando ANTHROPIC_API_KEY não está definida", () => {
-    delete process.env.ANTHROPIC_API_KEY;
+  it("retorna false quando OPENROUTER_API_KEY não está definida", () => {
+    delete process.env.OPENROUTER_API_KEY;
     expect(shouldSummarize({ ...base, description: "texto curto" })).toBe(false);
   });
 
   it("retorna false quando score >= 2 (descrição longa + percentual)", () => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
+    process.env.OPENROUTER_API_KEY = "test-key";
     const item = { ...base, description: "A".repeat(160), title: "Smiles com bônus de 100%" };
     expect(shouldSummarize(item)).toBe(false);
   });
 
   it("retorna false quando título + descrição têm nome de programa e valor monetário", () => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
+    process.env.OPENROUTER_API_KEY = "test-key";
     const item = { ...base, title: "Livelo promove transferência por R$ 0,01", description: "Promoção válida até fim do mês com condições especiais para os usuários do programa Livelo disponíveis." };
     expect(shouldSummarize(item)).toBe(false);
   });
 
   it("retorna true quando descrição é curta e sem dados concretos", () => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
+    process.env.OPENROUTER_API_KEY = "test-key";
     const item = { ...base, description: "Saiba mais sobre essa novidade." };
     expect(shouldSummarize(item)).toBe(true);
   });
 
   it("retorna true quando título é clickbait e descrição é curta", () => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
+    process.env.OPENROUTER_API_KEY = "test-key";
     const item = { ...base, title: "Descubra como ganhar milhas grátis", description: "Veja a oferta" };
     expect(shouldSummarize(item)).toBe(true);
   });
 
   it("retorna false quando contém data específica e descrição longa", () => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
+    process.env.OPENROUTER_API_KEY = "test-key";
     const item = { ...base, title: "Promoção válida até 30/06", description: "A".repeat(160) };
     expect(shouldSummarize(item)).toBe(false);
   });
@@ -508,38 +491,37 @@ describe("fetchArticleText", () => {
 
 describe("summarizeArticle", () => {
   afterEach(() => {
-    delete process.env.ANTHROPIC_API_KEY;
-    getMockCreate().mockReset();
+    delete process.env.OPENROUTER_API_KEY;
   });
 
-  it("retorna null quando ANTHROPIC_API_KEY não está definida", async () => {
-    delete process.env.ANTHROPIC_API_KEY;
+  it("retorna null quando OPENROUTER_API_KEY não está definida", async () => {
+    delete process.env.OPENROUTER_API_KEY;
     const result = await summarizeArticle("Título", "Texto do artigo");
     expect(result).toBeNull();
   });
 
   it("retorna o texto dos bullet points quando a API responde com sucesso", async () => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
-    getMockCreate().mockResolvedValue({
-      content: [{ type: "text", text: "• Ponto 1\n• Ponto 2\n• Ponto 3" }],
+    process.env.OPENROUTER_API_KEY = "test-key";
+    mock.onPost("https://openrouter.ai/api/v1/chat/completions").reply(200, {
+      choices: [{ message: { content: "• Ponto 1\n• Ponto 2\n• Ponto 3" } }],
     });
     const result = await summarizeArticle("Título", "Texto do artigo");
     expect(result).toBe("• Ponto 1\n• Ponto 2\n• Ponto 3");
   });
 
-  it("retorna null quando o content block não é do tipo text", async () => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
-    getMockCreate().mockResolvedValue({
-      content: [{ type: "tool_use", id: "x", name: "x", input: {} }],
+  it("retorna null quando choices está vazio", async () => {
+    process.env.OPENROUTER_API_KEY = "test-key";
+    mock.onPost("https://openrouter.ai/api/v1/chat/completions").reply(200, {
+      choices: [],
     });
     const result = await summarizeArticle("Título", "Texto");
     expect(result).toBeNull();
   });
 
   it("lança erro quando a API falha", async () => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
-    getMockCreate().mockRejectedValue(new Error("API error"));
-    await expect(summarizeArticle("Título", "Texto")).rejects.toThrow("API error");
+    process.env.OPENROUTER_API_KEY = "test-key";
+    mock.onPost("https://openrouter.ai/api/v1/chat/completions").reply(500);
+    await expect(summarizeArticle("Título", "Texto")).rejects.toThrow();
   });
 });
 
@@ -586,15 +568,14 @@ describe("trackRssFeed com resumo (shouldSummarize ativo)", () => {
   };
 
   beforeEach(() => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
+    process.env.OPENROUTER_API_KEY = "test-key";
     jest.spyOn(fs, "readFileSync").mockImplementation(() => { throw new Error("ENOENT"); });
     jest.spyOn(fs, "mkdirSync").mockReturnValue(undefined as any);
     jest.spyOn(fs, "writeFileSync").mockReturnValue();
   });
 
   afterEach(() => {
-    delete process.env.ANTHROPIC_API_KEY;
-    getMockCreate().mockReset();
+    delete process.env.OPENROUTER_API_KEY;
   });
 
   it("gera resumo e inclui '📝 *Resumo:*' na mensagem quando shouldSummarize retorna true", async () => {
@@ -610,17 +591,18 @@ describe("trackRssFeed com resumo (shouldSummarize ativo)", () => {
 
     mock.onGet(/queroviajarnafaixa.*feed/).reply(200, rssShortDesc);
     mock.onGet("https://queroviajarnafaixa.com.br/milhas").reply(200, "<p>Texto do artigo completo sobre milhas.</p>");
-    getMockCreate().mockResolvedValue({
-      content: [{ type: "text", text: "• Ponto 1\n• Ponto 2" }],
+    mock.onPost("https://openrouter.ai/api/v1/chat/completions").reply(200, {
+      choices: [{ message: { content: "• Ponto 1\n• Ponto 2" } }],
     });
     mock.onPost(/sendMessage/).reply(200, { ok: true });
 
     await trackRssFeed(config);
 
-    expect(mock.history.post).toHaveLength(1);
-    const body = JSON.parse(mock.history.post[0].data);
-    expect(body.text).toContain("📝 *Resumo:*");
-    expect(body.text).toContain("• Ponto 1");
+    // 2 POST calls: 1 para o OpenRouter + 1 para o Telegram
+    expect(mock.history.post).toHaveLength(2);
+    const telegramBody = JSON.parse(mock.history.post[1].data); // [1] = Telegram
+    expect(telegramBody.text).toContain("📝 *Resumo:*");
+    expect(telegramBody.text).toContain("• Ponto 1");
   });
 
   it("envia sem resumo quando fetch do artigo falha (fallback silencioso)", async () => {
