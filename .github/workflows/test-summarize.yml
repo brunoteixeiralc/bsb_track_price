@@ -1,0 +1,41 @@
+name: Test Summarize (Claude API)
+
+# Roda SOMENTE quando acionado manualmente — nunca por push ou cron.
+# Serve para validar que a integração com a Claude API está funcionando:
+# pega o primeiro artigo do feed, gera o resumo e loga o resultado.
+# Se TELEGRAM_BOT_TOKEN estiver definido, envia também ao Telegram.
+on:
+  workflow_dispatch:
+
+jobs:
+  test-summarize:
+    name: Test article summarization
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check required secrets
+        run: |
+          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "❌ ANTHROPIC_API_KEY não definida em Settings → Secrets."
+            exit 1
+          fi
+          echo "✅ ANTHROPIC_API_KEY definida."
+
+      - name: Run summarize smoke test
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: npx ts-node src/scripts/test-summarize.ts
