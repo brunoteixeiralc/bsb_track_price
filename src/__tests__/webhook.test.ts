@@ -98,5 +98,24 @@ describe("Webhook Multi-usuário", () => {
       const body = JSON.parse(mock.history.post[0].data);
       expect(body.text).toContain("Alerta criado");
     });
+
+    it("permite editar preço de um alerta existente", async () => {
+      mock.onPost(/sendMessage/).reply(200, { ok: true });
+      (userService.isUserAuthorized as jest.Mock).mockResolvedValue(true);
+
+      await handleUpdate({
+        update_id: 4,
+        message: {
+          message_id: 4,
+          chat: { id: userChatId, type: "private" },
+          text: "/editar 5 600",
+          from: { id: userChatId, first_name: "User" }
+        }
+      });
+
+      expect(userService.updateAlertPrice).toHaveBeenCalledWith("987654321", 5, 600);
+      const body = JSON.parse(mock.history.post[0].data);
+      expect(body.text).toContain("atualizado para R$ 600");
+    });
   });
 });

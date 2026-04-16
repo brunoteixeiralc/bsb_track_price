@@ -119,14 +119,33 @@ async function handleMeusAlertas(chatId: string): Promise<void> {
 
   const lines = ["📋 *Seus Alertas Ativos:*", ""];
   for (const a of alerts) {
-    lines.push(`🆔 \`/remover ${a.id}\``);
     lines.push(`🛫 *${a.origin} → ${a.destination}*`);
     lines.push(`📅 ${a.departure_date}${a.return_date ? ` (Volta: ${a.return_date})` : ""}`);
-    lines.push(`💰 Limite: ${formatBRL(a.max_price_brl)}`);
+    lines.push(`💰 Limite: *${formatBRL(a.max_price_brl)}*`);
+    lines.push(`🗑️ \`/remover ${a.id}\` | ✏️ \`/editar ${a.id} NOVO_PREÇO\``);
     lines.push("");
   }
 
   await sendReply(chatId, lines.join("\n"));
+}
+
+async function handleEditarAlerta(chatId: string, args: string[]): Promise<void> {
+  // Formato: /editar ID NOVO_PRECO
+  if (args.length < 2) {
+    await sendReply(chatId, "❌ Formato inválido.\nUse: `/editar ID NOVO_PREÇO`\nEx: `/editar 5 450` (muda o alerta 5 para R$ 450)");
+    return;
+  }
+
+  const id = parseInt(args[0]);
+  const newPrice = parseFloat(args[1].replace(/[^0-9.]/g, ""));
+
+  if (isNaN(id) || isNaN(newPrice)) {
+    await sendReply(chatId, "❌ ID ou Preço inválidos.");
+    return;
+  }
+
+  const ok = await userService.updateAlertPrice(chatId, id, newPrice);
+  await sendReply(chatId, ok ? `✅ Alerta *${id}* atualizado para *${formatBRL(newPrice)}*!` : "❌ Alerta não encontrado ou não pertence a você.");
 }
 
 export async function handleUpdate(update: TelegramUpdate): Promise<void> {
@@ -161,8 +180,14 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
       await handleMeusAlertas(chatId);
     } else if (cmd === "/remover") {
       const id = parseInt(args[0]);
-      const ok = await userService.removeAlert(chatId, id);
-      await sendReply(chatId, ok ? `🗑️ Alerta ${id} removido.` : "❌ Alerta não encontrado.");
+      if (isNaN(id)) {
+        await sendReply(chatId, "❌ Informe o ID numérico do alerta. Verifique em `/meusalertas`.");
+      } else {
+        const ok = await userService.removeAlert(chatId, id);
+        await sendReply(chatId, ok ? `🗑️ Alerta *${id}* removido com sucesso.` : "❌ Alerta não encontrado ou não pertence a você.");
+      }
+    } else if (cmd === "/editar") {
+      await handleEditarAlerta(chatId, args);
     } else if (cmd === "/autorizar") {
       await handleAutorizar(chatId, args[0]);
     } else if (cmd === "/status") {

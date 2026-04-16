@@ -93,6 +93,16 @@ export async function removeAlert(chatId: string, alertId: number): Promise<bool
   return Number(result.rowsAffected) > 0;
 }
 
+/** Atualiza o preço máximo de um alerta */
+export async function updateAlertPrice(chatId: string, alertId: number, newPrice: number): Promise<boolean> {
+  const db = getDb();
+  const result = await db.execute({
+    sql: "UPDATE alerts SET max_price_brl = ? WHERE id = ? AND chat_id = ?",
+    args: [newPrice, alertId, chatId],
+  });
+  return Number(result.rowsAffected) > 0;
+}
+
 /** Busca todos os alertas ativos de todos os usuários (usado pelo Tracker) */
 export async function getAllActiveAlerts(): Promise<UserAlert[]> {
   const db = getDb();
