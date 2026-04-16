@@ -1,6 +1,5 @@
 import axios, { isAxiosError } from "axios";
-import fs from "fs";
-import path from "path";
+import { getDb } from "./db";
 
 function formatError(err: unknown): string {
   if (isAxiosError(err)) {
@@ -11,8 +10,6 @@ function formatError(err: unknown): string {
 
 const RSS_URL = "https://passageirodeprimeira.com/categorias/noticias/feed/";
 const RSS_URL_PROMOCOES = "https://passageirodeprimeira.com/categorias/promocoes/feed/";
-const SEEN_DB_PATH = path.join(process.cwd(), "data", "news-seen.json");
-const MAX_SEEN = 300; // máximo de GUIDs armazenados
 const TIMEOUT_MS = 15_000;
 const DESCRIPTION_MAX_CHARS = 300;
 const SUMMARIZE_MODEL = "openrouter/elephant-alpha";
@@ -20,20 +17,9 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const ARTICLE_MAX_WORDS = 1500;
 
 const MILHA_KEYWORDS = [
-  "milha",
-  "milhas",
-  "pontos",
-  "smiles",
-  "livelo",
-  "esfera",
-  "tudo azul",
-  "latam pass",
-  "programa de fidelidade",
-  "frequent flyer",
-  "clube de vantagens",
-  "bônus",
-  "transferência de pontos",
-  "passagem premiada",
+  "milha", "milhas", "pontos", "smiles", "livelo", "esfera", "tudo azul", 
+  "latam pass", "programa de fidelidade", "frequent flyer", "clube de vantagens", 
+  "bônus", "transferência de pontos", "passagem premiada",
 ];
 
 export interface RssItem {
@@ -46,15 +32,32 @@ export interface RssItem {
 
 export interface FeedConfig {
   rssUrl: string;
-  keywords: string[];  // vazio = aceita todos os itens sem filtro
-  seenDbPath: string;
-  feedName: string;    // prefixo usado nos logs: "news", "offers", etc.
+  keywords: string[];
+  feedName: string;
+}
+
+// ── Banco de dados (Turso) ───────────────────────────────────────────────────
+
+async function isGuidSeen(guid: string): Promise<boolean> {
+  const db = getDb();
+  const res = await db.execute({
+    sql: "SELECT 1 FROM news_seen WHERE guid = ?",
+    args: [guid]
+  });
+  return res.rows.length > 0;
+}
+
+async function markGuidAsSeen(guid: string, tag: string): Promise<void> {
+  const db = getDb();
+  await db.execute({
+    sql: "INSERT OR IGNORE INTO news_seen (guid, tag) VALUES (?, ?)",
+    args: [guid, tag]
+  });
 }
 
 // ── Parsing RSS ──────────────────────────────────────────────────────────────
 
 function extractTag(xml: string, tag: string): string {
-  // Suporta CDATA: <tag><![CDATA[valor]]></tag> e <tag>valor</tag>
   const re = new RegExp(
     `<${tag}[^>]*>(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([\\s\\S]*?))</${tag}>`,
     "i"
@@ -106,66 +109,25 @@ export function parseRssItems(xml: string): RssItem[] {
   return items;
 }
 
-// ── Filtro por palavras-chave ────────────────────────────────────────────────
+// ── Filtros e IA ─────────────────────────────────────────────────────────────
 
 export function isKeywordRelated(item: RssItem, keywords: string[]): boolean {
-  if (keywords.length === 0) return true; // sem filtro = aceita tudo
+  if (keywords.length === 0) return true;
   const haystack = `${item.title} ${item.description}`.toLowerCase();
   return keywords.some((kw) => haystack.includes(kw));
 }
 
-/** @deprecated use isKeywordRelated(item, MILHA_KEYWORDS) */
-export function isMilhaRelated(item: RssItem): boolean {
-  return isKeywordRelated(item, MILHA_KEYWORDS);
-}
-
-// ── Banco de dados de GUIDs já vistos ───────────────────────────────────────
-
-export function loadSeenGuids(dbPath: string = SEEN_DB_PATH): Set<string> {
-  try {
-    const raw = fs.readFileSync(dbPath, "utf-8");
-    const arr: string[] = JSON.parse(raw);
-    return new Set(arr);
-  } catch {
-    return new Set();
-  }
-}
-
-export function saveSeenGuids(guids: Set<string>, dbPath: string = SEEN_DB_PATH): void {
-  const arr = Array.from(guids).slice(-MAX_SEEN);
-  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-  fs.writeFileSync(dbPath, JSON.stringify(arr, null, 2));
-}
-
-// ── Filtro + resumo via Claude ────────────────────────────────────────────────
-
-/**
- * Retorna true se o artigo precisa de resumo via Claude.
- * Score < 2 = informação insuficiente no RSS → resume.
- * Retorna false imediatamente se ANTHROPIC_API_KEY não estiver definido.
- */
 export function shouldSummarize(item: RssItem): boolean {
   if (!process.env.OPENROUTER_API_KEY) return false;
-
   let score = 0;
   const text = `${item.title} ${item.description}`.toLowerCase();
-
-  // Ideia 1 — descrição substancial
   if (item.description.length >= 150) score++;
-
-  // Ideia 2 — dados concretos: %, R$, datas, nomes de programas
   if (/\d+\s*%|r\$\s*[\d.,]+/.test(text)) score++;
-  if (/\b\d{1,2}\/\d{1,2}|\b(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b/.test(text)) score++;
-  if (/smiles|livelo|esfera|tudo azul|latam pass|azul fidelidade|multiplus/.test(text)) score++;
-
-  // Ideia 4 — título clickbait ou descrição muito curta (penalidade)
-  if (/^(veja|descubra|saiba|confira|conheça|entenda|aprenda)\b/i.test(item.title.trim())) score--;
-  if (item.description.length < 80) score--;
-
+  if (/smiles|livelo|esfera|tudo azul|latam pass|azul fidelidade/.test(text)) score++;
+  if (/^(veja|saiba|confira|entenda)\b/i.test(item.title.trim())) score--;
   return score < 2;
 }
 
-/** Busca o HTML do artigo e retorna o texto limpo, truncado a ARTICLE_MAX_WORDS palavras. */
 export async function fetchArticleText(url: string): Promise<string> {
   const res = await axios.get<string>(url, {
     timeout: TIMEOUT_MS,
@@ -178,41 +140,25 @@ export async function fetchArticleText(url: string): Promise<string> {
     : text;
 }
 
-/** Chama OpenRouter e retorna 4-5 bullet points em PT, ou null em caso de falha. */
 export async function summarizeArticle(title: string, articleText: string): Promise<string | null> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
-
   const response = await axios.post(
     OPENROUTER_URL,
     {
       model: SUMMARIZE_MODEL,
       max_tokens: 300,
       messages: [
-        {
-          role: "system",
-          content: "Você resume artigos de viagem e programas de milhas em português. Seja direto e objetivo.",
-        },
-        {
-          role: "user",
-          content: `Artigo: "${title}"\n\n${articleText}\n\nResuma em 4-5 bullet points (•). Foque em valores, datas, condições e como participar.`,
-        },
+        { role: "system", content: "Você é um assistente especialista em milhas e cartões. Resuma o artigo em pontos chave." },
+        { role: "user", content: `Artigo: "${title}"\n\n${articleText}\n\nResuma em 4-5 bullet points.` },
       ],
     },
-    {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      timeout: TIMEOUT_MS,
-    }
+    { headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, timeout: TIMEOUT_MS }
   );
-
-  const content = response.data?.choices?.[0]?.message?.content;
-  return typeof content === "string" ? content.trim() : null;
+  return response.data?.choices?.[0]?.message?.content?.trim() ?? null;
 }
 
-// ── Mensagem Telegram ────────────────────────────────────────────────────────
+// ── Telegram ─────────────────────────────────────────────────────────────────
 
 export function buildNewsMessage(item: RssItem, summary?: string): string {
   const lines = [`📰 *${item.title}*`, ``];
@@ -225,20 +171,13 @@ export function buildNewsMessage(item: RssItem, summary?: string): string {
   return lines.join("\n");
 }
 
-function getTelegramConfig(): { botToken: string; chatId: string } {
+export async function sendNewsAlert(item: RssItem, summary?: string): Promise<void> {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
-  if (!botToken) throw new Error("Missing required env var: TELEGRAM_BOT_TOKEN");
-  if (!chatId) throw new Error("Missing required env var: TELEGRAM_CHAT_ID");
-  return { botToken, chatId };
-}
+  if (!botToken || !chatId) return;
 
-export async function sendNewsAlert(item: RssItem, summary?: string): Promise<void> {
-  const { botToken, chatId } = getTelegramConfig();
-  const BASE_URL = `https://api.telegram.org/bot${botToken}`;
   const text = buildNewsMessage(item, summary);
-
-  await axios.post(`${BASE_URL}/sendMessage`, {
+  await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     chat_id: chatId,
     text,
     parse_mode: "Markdown",
@@ -246,11 +185,11 @@ export async function sendNewsAlert(item: RssItem, summary?: string): Promise<vo
   }, { timeout: TIMEOUT_MS });
 }
 
-// ── Tracker genérico (qualquer feed RSS) ────────────────────────────────────
+// ── Main Tracker ────────────────────────────────────────────────────────────
 
 export async function trackRssFeed(feedConfig: FeedConfig): Promise<void> {
   const tag = `[${feedConfig.feedName}]`;
-  console.log(`${tag} Buscando RSS: ${feedConfig.rssUrl}`);
+  console.log(`${tag} Buscando RSS...`);
 
   let xml: string;
   try {
@@ -261,58 +200,37 @@ export async function trackRssFeed(feedConfig: FeedConfig): Promise<void> {
     xml = res.data;
   } catch (err) {
     console.error(`${tag} Falha ao buscar RSS: ${formatError(err)}`);
-    throw err;
+    return;
   }
 
   const items = parseRssItems(xml);
-  console.log(`${tag} ${items.length} item(ns) no feed.`);
-
   const filtered = items.filter((item) => isKeywordRelated(item, feedConfig.keywords));
-  console.log(`${tag} ${filtered.length} item(ns) após filtro de keywords.`);
+  
+  let sentCount = 0;
+  for (const item of filtered) {
+    if (await isGuidSeen(item.guid)) continue;
 
-  const seen = loadSeenGuids(feedConfig.seenDbPath);
-  const newItems = filtered.filter((item) => !seen.has(item.guid));
-  console.log(`${tag} ${newItems.length} item(ns) novo(s) para enviar.`);
-
-  for (const item of newItems) {
     try {
       let summary: string | undefined;
       if (shouldSummarize(item)) {
         try {
-          const articleText = await fetchArticleText(item.link);
-          summary = (await summarizeArticle(item.title, articleText)) ?? undefined;
-          console.log(`${tag} Resumo gerado para: ${item.title}`);
-        } catch (err) {
-          console.warn(`${tag} Falha ao gerar resumo, enviando sem resumo: ${formatError(err)}`);
-        }
+          const text = await fetchArticleText(item.link);
+          summary = (await summarizeArticle(item.title, text)) ?? undefined;
+        } catch (e) {}
       }
+      
       await sendNewsAlert(item, summary);
-      seen.add(item.guid);
+      await markGuidAsSeen(item.guid, feedConfig.feedName);
+      sentCount++;
       console.log(`${tag} Enviado: ${item.title}`);
     } catch (err) {
-      console.error(`${tag} Falha ao enviar "${item.title}": ${formatError(err)}`);
+      console.error(`${tag} Erro no item "${item.title}": ${formatError(err)}`);
     }
   }
-
-  saveSeenGuids(seen, feedConfig.seenDbPath);
-  console.log(`${tag} Concluído. ${seen.size} GUID(s) no banco.`);
+  console.log(`${tag} Concluído. ${sentCount} nova(s) notícia(s) enviada(s).`);
 }
 
-// ── Entry point do tracker de notícias (milhas) ──────────────────────────────
-
 export async function runNewsTracker(): Promise<void> {
-  // Feed 1 — categoria "notícias"
-  await trackRssFeed({
-    rssUrl: RSS_URL,
-    keywords: MILHA_KEYWORDS,
-    seenDbPath: SEEN_DB_PATH,
-    feedName: "news",
-  });
-  // Feed 2 — categoria "promoções" (mesmo banco → sem duplicatas entre feeds)
-  await trackRssFeed({
-    rssUrl: RSS_URL_PROMOCOES,
-    keywords: MILHA_KEYWORDS,
-    seenDbPath: SEEN_DB_PATH,
-    feedName: "news-promocoes",
-  });
+  await trackRssFeed({ rssUrl: RSS_URL, keywords: MILHA_KEYWORDS, feedName: "news" });
+  await trackRssFeed({ rssUrl: RSS_URL_PROMOCOES, keywords: MILHA_KEYWORDS, feedName: "news-promocoes" });
 }

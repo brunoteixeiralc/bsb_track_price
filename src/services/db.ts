@@ -69,4 +69,13 @@ export async function initTables(): Promise<void> {
       FOREIGN KEY (chat_id) REFERENCES users(chat_id)
     )
   `);
+
+  // Tabela para evitar duplicidade de notícias e ofertas
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS news_seen (
+      guid TEXT PRIMARY KEY,
+      tag TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 }
