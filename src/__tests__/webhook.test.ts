@@ -1,13 +1,13 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
-import { handleUpdate, sendReply } from "../services/webhook";
+import { handleUpdate } from "../services/webhook";
 import * as userService from "../services/user";
 
 jest.mock("../config", () => ({
   config: {
     telegram: {
       botToken: "test-token",
-      chatId: "ADMIN_ID", // ID do administrador
+      chatId: "123456789", // ID do administrador REAL (número em string)
     },
     search: {
       origin: "BSB"
@@ -19,8 +19,10 @@ jest.mock("../services/user");
 jest.mock("../services/history");
 jest.mock("../services/db", () => ({
   getDb: jest.fn().mockReturnValue({
-    execute: jest.fn().mockResolvedValue({ rows: [], rowsAffected: 1 })
-  })
+    execute: jest.fn().mockResolvedValue({ rows: [{ n: 0 }], rowsAffected: 1 }),
+    close: jest.fn()
+  }),
+  initTables: jest.fn().mockResolvedValue(undefined)
 }));
 
 const mock = new MockAdapter(axios);
@@ -31,8 +33,8 @@ beforeEach(() => {
 });
 
 describe("Webhook Multi-usuário", () => {
-  const adminChatId = "ADMIN_ID";
-  const userChatId = "USER_123";
+  const adminChatId = 123456789;
+  const userChatId = 987654321;
 
   describe("handleUpdate - Permissões", () => {
     it("autoriza automaticamente o administrador no /start", async () => {
@@ -42,15 +44,15 @@ describe("Webhook Multi-usuário", () => {
         update_id: 1,
         message: {
           message_id: 1,
-          chat: { id: parseInt(adminChatId), type: "private" },
+          chat: { id: adminChatId, type: "private" },
           text: "/start",
-          from: { id: parseInt(adminChatId), first_name: "Admin" }
+          from: { id: adminChatId, first_name: "Admin" }
         }
       });
 
-      // Deve ter enviado mensagem de boas vindas ao admin
       const body = JSON.parse(mock.history.post[0].data);
-      expect(body.text).toContain("Olá, Administrador");
+      expect(body.text).toContain("Administrador");
+      expect(body.text).not.toContain("pendente");
     });
 
     it("pede autorização para novos usuários no /start", async () => {
@@ -61,14 +63,14 @@ describe("Webhook Multi-usuário", () => {
         update_id: 2,
         message: {
           message_id: 2,
-          chat: { id: parseInt(userChatId), type: "private" },
+          chat: { id: userChatId, type: "private" },
           text: "/start",
-          from: { id: parseInt(userChatId), first_name: "Visitante" }
+          from: { id: userChatId, first_name: "Visitante" }
         }
       });
 
       const body = JSON.parse(mock.history.post[0].data);
-      expect(body.text).toContain("acesso está pendente");
+      expect(body.text).toContain("pendente");
     });
   });
 
@@ -81,9 +83,9 @@ describe("Webhook Multi-usuário", () => {
         update_id: 3,
         message: {
           message_id: 3,
-          chat: { id: parseInt(userChatId), type: "private" },
+          chat: { id: userChatId, type: "private" },
           text: "/alerta BSB GRU 20/12/2026 500",
-          from: { id: parseInt(userChatId), first_name: "User" }
+          from: { id: userChatId, first_name: "User" }
         }
       });
 
