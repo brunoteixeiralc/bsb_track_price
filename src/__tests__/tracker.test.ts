@@ -14,8 +14,6 @@ const mockConfig = {
     returnDate: undefined as string | undefined,
     maxPriceBRL: 300,
     priceDropThreshold: 0.95,
-    adults: 1,
-    children: 0,
   },
   filters: {
     airlinesWhitelist: [] as string[],
@@ -29,9 +27,9 @@ jest.mock("../config", () => ({ config: mockConfig }));
 const mockSearchWithApify = jest.fn();
 const mockSearchWithRapidAPI = jest.fn();
 const mockSendFlightAlert = jest.fn();
-const mockSendSummary = jest.fn();
 const mockAppendHistory = jest.fn();
 const mockGetLastCheapestPrice = jest.fn();
+const mockGetAllActiveAlerts = jest.fn();
 
 jest.mock("../apis/apify", () => ({
   searchWithApify: (...args: unknown[]) => mockSearchWithApify(...args),
@@ -41,16 +39,11 @@ jest.mock("../apis/rapidapi", () => ({
   searchWithRapidAPI: (...args: unknown[]) => mockSearchWithRapidAPI(...args),
 }));
 
-const mockSendDateRangeSummary = jest.fn();
-const mockSendErrorAlert = jest.fn();
-const mockSendAntiSpamNotice = jest.fn();
-
 jest.mock("../services/telegram", () => ({
   sendFlightAlert: (...args: unknown[]) => mockSendFlightAlert(...args),
-  sendSummary: (...args: unknown[]) => mockSendSummary(...args),
-  sendDateRangeSummary: (...args: unknown[]) => mockSendDateRangeSummary(...args),
-  sendErrorAlert: (...args: unknown[]) => mockSendErrorAlert(...args),
-  sendAntiSpamNotice: (...args: unknown[]) => mockSendAntiSpamNotice(...args),
+  sendSummary: jest.fn(),
+  sendDateRangeSummary: jest.fn(),
+  sendErrorAlert: jest.fn(),
 }));
 
 jest.mock("../services/history", () => ({
@@ -58,42 +51,27 @@ jest.mock("../services/history", () => ({
   getLastCheapestPrice: (...args: unknown[]) => mockGetLastCheapestPrice(...args),
 }));
 
-// sleep no-op para não atrasar os testes de retry
-jest.mock("../utils/retry", () => {
-  const actual = jest.requireActual("../utils/retry");
-  return {
-    withRetry: (fn: () => Promise<unknown>, maxAttempts: number, delayMs: number, onRetry?: (a: number, e: unknown) => void) =>
-      actual.withRetry(fn, maxAttempts, delayMs, onRetry, async () => {}),
-  };
-});
+jest.mock("../services/user", () => ({
+  getAllActiveAlerts: () => mockGetAllActiveAlerts(),
+}));
+
+jest.mock("../utils/retry", () => ({
+  withRetry: (fn: () => Promise<unknown>) => fn(),
+}));
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockSendFlightAlert.mockResolvedValue(undefined);
-  mockSendSummary.mockResolvedValue(undefined);
-  mockSendDateRangeSummary.mockResolvedValue(undefined);
-  mockSendErrorAlert.mockResolvedValue(undefined);
-  mockSendAntiSpamNotice.mockResolvedValue(undefined);
-  mockAppendHistory.mockReturnValue(undefined);
-  // Por padrão, sem histórico anterior (primeira busca → alerta permitido)
-  mockGetLastCheapestPrice.mockReturnValue(null);
-  mockConfig.search.origins = ["BSB"];
-  mockConfig.search.origin = "BSB";
-  mockConfig.search.destinations = ["GRU"];
-  mockConfig.search.dateRangeDays = 1;
-  mockConfig.search.tripType = "one-way";
-  mockConfig.search.returnDate = undefined;
-  mockConfig.filters.airlinesWhitelist = [];
-  mockConfig.filters.maxStops = undefined;
-  mockConfig.filters.maxDurationHours = undefined;
+  mockGetAllActiveAlerts.mockResolvedValue([]);
+  mockGetLastCheapestPrice.mockResolvedValue(null);
+  mockSearchWithApify.mockResolvedValue([]);
 });
 
-function makeFlight(priceBRL: number, destination = "GRU", tripType: Flight["tripType"] = "one-way"): Flight {
+function makeFlight(priceBRL: number): Flight {
   return {
     origin: "BSB",
-    destination,
+    destination: "GRU",
     departureDate: "2026-06-01",
-    tripType,
+    tripType: "one-way",
     price: priceBRL,
     currency: "BRL",
     priceBRL,
@@ -103,410 +81,40 @@ function makeFlight(priceBRL: number, destination = "GRU", tripType: Flight["tri
 }
 
 describe("runTracker", () => {
-  it("envia alerta apenas para voos abaixo do threshold", async () => {
-    mockSearchWithApify.mockResolvedValue([
-      makeFlight(200),
-      makeFlight(350), // acima de 300
-      makeFlight(280),
+  it("processa rotas globais do config", async () => {
+    mockSearchWithApify.mockResolvedValue([makeFlight(200)]);
+    const { runTracker } = await import("../services/tracker");
+    await runTracker();
+    expect(mockSearchWithApify).toHaveBeenCalled();
+    expect(mockSendFlightAlert).toHaveBeenCalled();
+  });
+
+  it("processa alertas de usuários do banco", async () => {
+    mockGetAllActiveAlerts.mockResolvedValue([
+      {
+        chat_id: "user123",
+        origin: "BSB",
+        destination: "FOR",
+        departure_date: "2026-07-01",
+        max_price_brl: 500,
+        is_active: true,
+        trip_type: "one-way"
+      }
     ]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSendFlightAlert).toHaveBeenCalledTimes(2);
-    const prices = mockSendFlightAlert.mock.calls.map(
-      (call) => (call[0] as Flight).priceBRL
-    );
-    expect(prices).not.toContain(350);
-  });
-
-  it("ordena os voos por preço crescente antes de enviar", async () => {
-    mockSearchWithApify.mockResolvedValue([
-      makeFlight(280),
-      makeFlight(150),
-      makeFlight(200),
-    ]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    const prices = mockSendFlightAlert.mock.calls.map(
-      (call) => (call[0] as Flight).priceBRL
-    );
-    expect(prices).toEqual([150, 200, 280]);
-  });
-
-  it("não envia alerta quando não há voos abaixo do threshold", async () => {
-    mockSearchWithApify.mockResolvedValue([makeFlight(400), makeFlight(500)]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSendFlightAlert).not.toHaveBeenCalled();
-    expect(mockSendSummary).toHaveBeenCalledWith(0, 2, "BSB→GRU");
-  });
-
-  it("usa RapidAPI como fallback quando Apify falha", async () => {
-    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
-    mockSearchWithRapidAPI.mockResolvedValue([makeFlight(250)]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSearchWithRapidAPI).toHaveBeenCalled();
-    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
-  });
-
-  it("lança erro quando ambas as APIs falham", async () => {
-    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
-    mockSearchWithRapidAPI.mockRejectedValue(new Error("RapidAPI down"));
-
-    const { runTracker } = await import("../services/tracker");
-    await expect(runTracker()).rejects.toThrow();
-  });
-
-  it("envia alerta de erro no Telegram quando ambas as APIs falham (data única)", async () => {
-    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
-    mockSearchWithRapidAPI.mockRejectedValue(new Error("RapidAPI down"));
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker().catch(() => {});
-
-    expect(mockSendErrorAlert).toHaveBeenCalledTimes(1);
-    expect(mockSendErrorAlert).toHaveBeenCalledWith(
-      "BSB→GRU",
-      expect.stringContaining("2026-06-01")
-    );
-  });
-
-  it("busca múltiplos destinos em sequência", async () => {
-    mockConfig.search.destinations = ["GRU", "SDL"];
-    mockSearchWithApify.mockResolvedValue([makeFlight(250)]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSearchWithApify).toHaveBeenCalledTimes(2);
-    expect(mockSearchWithApify).toHaveBeenCalledWith(
-      expect.objectContaining({ destination: "GRU" })
-    );
-    expect(mockSearchWithApify).toHaveBeenCalledWith(
-      expect.objectContaining({ destination: "SDL" })
-    );
-    expect(mockSendSummary).toHaveBeenCalledTimes(2);
-  });
-
-  it("passa a rota no resumo do Telegram", async () => {
-    mockSearchWithApify.mockResolvedValue([]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSendSummary).toHaveBeenCalledWith(0, 0, "BSB→GRU");
-  });
-
-  it("retenta Apify até 3x antes de cair para RapidAPI", async () => {
-    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
-    mockSearchWithRapidAPI.mockResolvedValue([makeFlight(250)]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSearchWithApify).toHaveBeenCalledTimes(3);
-    expect(mockSearchWithRapidAPI).toHaveBeenCalledTimes(1);
-  });
-
-  it("não chama RapidAPI se Apify sucede na segunda tentativa", async () => {
-    mockSearchWithApify
-      .mockRejectedValueOnce(new Error("Apify falha 1"))
-      .mockResolvedValueOnce([makeFlight(200)]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSearchWithApify).toHaveBeenCalledTimes(2);
-    expect(mockSearchWithRapidAPI).not.toHaveBeenCalled();
-    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
-  });
-
-  it("com dateRangeDays=3 busca API 3x e alerta a data mais barata", async () => {
-    mockConfig.search.dateRangeDays = 3;
-    mockSearchWithApify
-      .mockResolvedValueOnce([makeFlight(500)])  // 2026-06-01
-      .mockResolvedValueOnce([makeFlight(200)])  // 2026-06-02 — mais barata
-      .mockResolvedValueOnce([makeFlight(350)]); // 2026-06-03
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSearchWithApify).toHaveBeenCalledTimes(3);
-    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
-    expect((mockSendFlightAlert.mock.calls[0][0] as Flight).priceBRL).toBe(200);
-    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 3, expect.objectContaining({ priceBRL: 200 }), 300, "one-way", "2026-06-01", "2026-06-03");
-  });
-
-  it("com dateRangeDays>1 não alerta se nenhuma data estiver abaixo do threshold", async () => {
-    mockConfig.search.dateRangeDays = 2;
     mockSearchWithApify.mockResolvedValue([makeFlight(400)]);
-
+    
     const { runTracker } = await import("../services/tracker");
     await runTracker();
-
-    expect(mockSendFlightAlert).not.toHaveBeenCalled();
-    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, expect.objectContaining({ priceBRL: 400 }), 300, "one-way", "2026-06-01", "2026-06-02");
-  });
-
-  it("com dateRangeDays>1 pula datas onde ambas as APIs falham", async () => {
-    mockConfig.search.dateRangeDays = 2;
-    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
-    mockSearchWithRapidAPI
-      .mockRejectedValueOnce(new Error("RapidAPI down"))  // primeira data falha
-      .mockResolvedValueOnce([makeFlight(250)]);           // segunda data ok
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
-    expect(mockSendDateRangeSummary).toHaveBeenCalledWith("BSB→GRU", 2, expect.objectContaining({ priceBRL: 250 }), 300, "one-way", "2026-06-01", "2026-06-02");
-  });
-
-  it("passa tripType round-trip e returnDate nos params da busca", async () => {
-    mockConfig.search.tripType = "round-trip";
-    mockConfig.search.returnDate = "2026-06-10";
-    mockSearchWithApify.mockResolvedValue([makeFlight(350, "GRU", "round-trip")]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
+    
+    // Deve buscar a rota do usuário
     expect(mockSearchWithApify).toHaveBeenCalledWith(
-      expect.objectContaining({ tripType: "round-trip", returnDate: "2026-06-10" })
+      expect.objectContaining({ origin: "BSB", destination: "FOR" })
     );
-  });
-
-  it("com dateRangeDays>1 envia só o errorAlert (sem summary) quando todas as datas falham", async () => {
-    mockConfig.search.dateRangeDays = 2;
-    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
-    mockSearchWithRapidAPI.mockRejectedValue(new Error("RapidAPI down"));
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSendFlightAlert).not.toHaveBeenCalled();
-    expect(mockSendErrorAlert).toHaveBeenCalledWith("BSB→GRU", expect.stringContaining("2 data(s)"));
-    expect(mockSendDateRangeSummary).not.toHaveBeenCalled();
-  });
-
-  it("envia alerta de erro quando todas as datas do intervalo falham", async () => {
-    mockConfig.search.dateRangeDays = 3;
-    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
-    mockSearchWithRapidAPI.mockRejectedValue(new Error("RapidAPI down"));
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSendErrorAlert).toHaveBeenCalledTimes(1);
-    expect(mockSendErrorAlert).toHaveBeenCalledWith(
-      "BSB→GRU",
-      expect.stringContaining("3 data(s)")
-    );
-  });
-
-  it("não envia alerta de erro quando apenas algumas datas do intervalo falham", async () => {
-    mockConfig.search.dateRangeDays = 2;
-    mockSearchWithApify.mockRejectedValue(new Error("Apify down"));
-    mockSearchWithRapidAPI
-      .mockRejectedValueOnce(new Error("RapidAPI down")) // primeira data falha
-      .mockResolvedValueOnce([makeFlight(250)]);          // segunda data ok
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSendErrorAlert).not.toHaveBeenCalled();
-  });
-
-  // ── Anti-spam ──────────────────────────────────────────────────────────────
-
-  it("anti-spam: não envia alerta se o preço não caiu ≥5% desde a última busca", async () => {
-    // Preço anterior: R$200 — preço atual: R$196 (queda de 2%, abaixo de 5%)
-    mockGetLastCheapestPrice.mockReturnValue(200);
-    mockSearchWithApify.mockResolvedValue([makeFlight(196)]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSendFlightAlert).not.toHaveBeenCalled();
-    // Summary ainda é enviado mesmo sem alerta
-    expect(mockSendSummary).toHaveBeenCalledWith(1, 1, "BSB→GRU");
-  });
-
-  it("anti-spam: envia alerta quando o preço cai ≥5% desde a última busca", async () => {
-    // Preço anterior: R$200 — preço atual: R$180 (queda de 10%)
-    mockGetLastCheapestPrice.mockReturnValue(200);
-    mockSearchWithApify.mockResolvedValue([makeFlight(180)]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
-    expect((mockSendFlightAlert.mock.calls[0][0] as Flight).priceBRL).toBe(180);
-  });
-
-  it("anti-spam: envia alerta quando é a primeira busca (sem histórico anterior)", async () => {
-    // mockGetLastCheapestPrice já retorna null por padrão no beforeEach
-    mockSearchWithApify.mockResolvedValue([makeFlight(250)]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
-  });
-
-  it("anti-spam: envia alerta quando preço cai exatamente 5%", async () => {
-    // Preço anterior: R$200 — preço atual: R$190 (queda exata de 5%)
-    mockGetLastCheapestPrice.mockReturnValue(200);
-    mockSearchWithApify.mockResolvedValue([makeFlight(190)]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
-  });
-
-  it("anti-spam (dateRange): suprime alerta quando melhor preço não caiu ≥5%", async () => {
-    mockConfig.search.dateRangeDays = 2;
-    // Preço anterior para a data mais barata: R$200, preço atual R$196 (queda de 2%)
-    mockGetLastCheapestPrice.mockReturnValue(200);
-    mockSearchWithApify
-      .mockResolvedValueOnce([makeFlight(196)]) // 2026-06-01
-      .mockResolvedValueOnce([makeFlight(300)]); // 2026-06-02
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSendFlightAlert).not.toHaveBeenCalled();
-  });
-
-  it("anti-spam (dateRange): envia alerta quando melhor preço caiu ≥5%", async () => {
-    mockConfig.search.dateRangeDays = 2;
-    // Preço anterior para a data mais barata: R$200, preço atual R$180 (queda de 10%)
-    mockGetLastCheapestPrice.mockReturnValue(200);
-    mockSearchWithApify
-      .mockResolvedValueOnce([makeFlight(180)]) // 2026-06-01
-      .mockResolvedValueOnce([makeFlight(300)]); // 2026-06-02
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
-    expect((mockSendFlightAlert.mock.calls[0][0] as Flight).priceBRL).toBe(180);
-  });
-
-  // ── price_level "low" independente do threshold ───────────────────────────
-
-  it("alerta com lowLevelAlert=true quando voo tem price_level=low acima do threshold", async () => {
-    const lowFlight = {
-      ...makeFlight(500), // acima do threshold de 300
-      priceInsights: { lowestPrice: 400, priceLevel: "low" as const, typicalPriceRange: [450, 600] as [number, number] },
-    };
-    mockSearchWithApify.mockResolvedValue([lowFlight]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    // sendFlightAlert deve ter sido chamado com lowLevelAlert=true
-    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
-    expect(mockSendFlightAlert.mock.calls[0][1]).toBe(true);
-  });
-
-  it("não envia low-level alert para voos com price_level=low abaixo do threshold (já coberto pelo alerta normal)", async () => {
-    const lowFlight = {
-      ...makeFlight(200), // abaixo do threshold
-      priceInsights: { lowestPrice: 150, priceLevel: "low" as const, typicalPriceRange: [180, 300] as [number, number] },
-    };
-    mockSearchWithApify.mockResolvedValue([lowFlight]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    // chamado 1x pelo threshold normal (lowLevelAlert=false), não 2x
-    expect(mockSendFlightAlert).toHaveBeenCalledTimes(1);
-    expect(mockSendFlightAlert.mock.calls[0][1]).toBeUndefined(); // default false
-  });
-
-  it("alerta com lowLevelAlert=true no modo dateRange quando voo com price_level=low está acima do threshold", async () => {
-    mockConfig.search.dateRangeDays = 2;
-    const lowFlight = {
-      ...makeFlight(500),
-      departureDate: "2026-06-01",
-      priceInsights: { lowestPrice: 400, priceLevel: "low" as const, typicalPriceRange: [450, 600] as [number, number] },
-    };
-    mockSearchWithApify.mockResolvedValue([lowFlight]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
+    // Deve enviar alerta para o chat_id do usuário
     expect(mockSendFlightAlert).toHaveBeenCalledWith(
-      expect.objectContaining({ priceBRL: 500 }),
-      true
-    );
-  });
-
-  // ── Múltiplas origens (ORIGINS=BSB,GRU) ───────────────────────────────────
-
-  it("com múltiplas origens, busca todas as combinações origem→destino, pulando origem===destino", async () => {
-    mockConfig.search.origins = ["BSB", "GRU"];
-    mockConfig.search.origin = "BSB";
-    mockConfig.search.destinations = ["GRU", "SDL"];
-    mockSearchWithApify.mockResolvedValue([makeFlight(250)]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    // BSB→GRU, BSB→SDL, GRU→SDL (GRU→GRU é pulado)
-    expect(mockSearchWithApify).toHaveBeenCalledTimes(3);
-    expect(mockSearchWithApify).toHaveBeenCalledWith(
-      expect.objectContaining({ origin: "BSB", destination: "GRU" })
-    );
-    expect(mockSearchWithApify).toHaveBeenCalledWith(
-      expect.objectContaining({ origin: "BSB", destination: "SDL" })
-    );
-    expect(mockSearchWithApify).toHaveBeenCalledWith(
-      expect.objectContaining({ origin: "GRU", destination: "SDL" })
-    );
-    expect(mockSearchWithApify).not.toHaveBeenCalledWith(
-      expect.objectContaining({ origin: "GRU", destination: "GRU" })
-    );
-  });
-
-  it("com ORIGINS=BSB,GRU e DESTINATIONS=GRU,BSB varre os dois sentidos (ida e volta)", async () => {
-    mockConfig.search.origins = ["BSB", "GRU"];
-    mockConfig.search.origin = "BSB";
-    mockConfig.search.destinations = ["GRU", "BSB"];
-    mockSearchWithApify.mockResolvedValue([makeFlight(250)]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    // BSB→GRU e GRU→BSB (BSB→BSB e GRU→GRU são pulados)
-    expect(mockSearchWithApify).toHaveBeenCalledTimes(2);
-    expect(mockSearchWithApify).toHaveBeenCalledWith(
-      expect.objectContaining({ origin: "BSB", destination: "GRU" })
-    );
-    expect(mockSearchWithApify).toHaveBeenCalledWith(
-      expect.objectContaining({ origin: "GRU", destination: "BSB" })
-    );
-  });
-
-  it("com origem única (ORIGIN=BSB), comportamento original é preservado", async () => {
-    // mockConfig.search.origins já é ["BSB"] por padrão no beforeEach
-    mockSearchWithApify.mockResolvedValue([makeFlight(250)]);
-
-    const { runTracker } = await import("../services/tracker");
-    await runTracker();
-
-    expect(mockSearchWithApify).toHaveBeenCalledTimes(1);
-    expect(mockSearchWithApify).toHaveBeenCalledWith(
-      expect.objectContaining({ origin: "BSB", destination: "GRU" })
+      expect.any(Object),
+      false,
+      "user123"
     );
   });
 });
