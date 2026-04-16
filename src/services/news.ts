@@ -16,7 +16,7 @@ const SEEN_DB_PATH = path.join(process.cwd(), "data", "news-seen.json");
 const MAX_SEEN = 300; // máximo de GUIDs armazenados
 const TIMEOUT_MS = 15_000;
 const DESCRIPTION_MAX_CHARS = 300;
-const SUMMARIZE_MODEL = "claude-3-5-haiku-20241022";
+const SUMMARIZE_MODEL = "claude-haiku-4-5-20251001";
 const ARTICLE_MAX_WORDS = 1500;
 
 const MILHA_KEYWORDS = [
