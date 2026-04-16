@@ -1,4 +1,5 @@
 import axios, { isAxiosError } from "axios";
+import Anthropic from "@anthropic-ai/sdk";
 import fs from "fs";
 import path from "path";
 
@@ -15,6 +16,8 @@ const SEEN_DB_PATH = path.join(process.cwd(), "data", "news-seen.json");
 const MAX_SEEN = 300; // máximo de GUIDs armazenados
 const TIMEOUT_MS = 15_000;
 const DESCRIPTION_MAX_CHARS = 300;
+const SUMMARIZE_MODEL = "claude-3-5-haiku-20241022";
+const ARTICLE_MAX_WORDS = 1500;
 
 const MILHA_KEYWORDS = [
   "milha",
@@ -134,18 +137,76 @@ export function saveSeenGuids(guids: Set<string>, dbPath: string = SEEN_DB_PATH)
   fs.writeFileSync(dbPath, JSON.stringify(arr, null, 2));
 }
 
+// ── Filtro + resumo via Claude ────────────────────────────────────────────────
+
+/**
+ * Retorna true se o artigo precisa de resumo via Claude.
+ * Score < 2 = informação insuficiente no RSS → resume.
+ * Retorna false imediatamente se ANTHROPIC_API_KEY não estiver definido.
+ */
+export function shouldSummarize(item: RssItem): boolean {
+  if (!process.env.ANTHROPIC_API_KEY) return false;
+
+  let score = 0;
+  const text = `${item.title} ${item.description}`.toLowerCase();
+
+  // Ideia 1 — descrição substancial
+  if (item.description.length >= 150) score++;
+
+  // Ideia 2 — dados concretos: %, R$, datas, nomes de programas
+  if (/\d+\s*%|r\$\s*[\d.,]+/.test(text)) score++;
+  if (/\b\d{1,2}\/\d{1,2}|\b(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b/.test(text)) score++;
+  if (/smiles|livelo|esfera|tudo azul|latam pass|azul fidelidade|multiplus/.test(text)) score++;
+
+  // Ideia 4 — título clickbait ou descrição muito curta (penalidade)
+  if (/^(veja|descubra|saiba|confira|conheça|entenda|aprenda)\b/i.test(item.title.trim())) score--;
+  if (item.description.length < 80) score--;
+
+  return score < 2;
+}
+
+/** Busca o HTML do artigo e retorna o texto limpo, truncado a ARTICLE_MAX_WORDS palavras. */
+export async function fetchArticleText(url: string): Promise<string> {
+  const res = await axios.get<string>(url, {
+    timeout: TIMEOUT_MS,
+    headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html" },
+  });
+  const text = stripHtml(res.data);
+  const words = text.split(/\s+/);
+  return words.length > ARTICLE_MAX_WORDS
+    ? words.slice(0, ARTICLE_MAX_WORDS).join(" ") + "…"
+    : text;
+}
+
+/** Chama Claude Haiku 3.5 e retorna 4-5 bullet points em PT, ou null em caso de falha. */
+export async function summarizeArticle(title: string, articleText: string): Promise<string | null> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+
+  const client = new Anthropic({ apiKey });
+  const response = await client.messages.create({
+    model: SUMMARIZE_MODEL,
+    max_tokens: 300,
+    system: "Você resume artigos de viagem e programas de milhas em português. Seja direto e objetivo.",
+    messages: [{
+      role: "user",
+      content: `Artigo: "${title}"\n\n${articleText}\n\nResuma em 4-5 bullet points (•). Foque em valores, datas, condições e como participar.`,
+    }],
+  });
+  const block = response.content[0];
+  return block.type === "text" ? block.text.trim() : null;
+}
+
 // ── Mensagem Telegram ────────────────────────────────────────────────────────
 
-export function buildNewsMessage(item: RssItem): string {
-  const lines = [
-    `📰 *${item.title}*`,
-    ``,
-  ];
-  if (item.description) {
-    lines.push(item.description);
-    lines.push(``);
+export function buildNewsMessage(item: RssItem, summary?: string): string {
+  const lines = [`📰 *${item.title}*`, ``];
+  if (summary) {
+    lines.push(`🔗 [Ler mais](${item.link})`, ``, `📝 *Resumo:*`, summary);
+  } else {
+    if (item.description) lines.push(item.description, ``);
+    lines.push(`🔗 [Ler mais](${item.link})`);
   }
-  lines.push(`🔗 [Ler mais](${item.link})`);
   return lines.join("\n");
 }
 
@@ -157,10 +218,10 @@ function getTelegramConfig(): { botToken: string; chatId: string } {
   return { botToken, chatId };
 }
 
-export async function sendNewsAlert(item: RssItem): Promise<void> {
+export async function sendNewsAlert(item: RssItem, summary?: string): Promise<void> {
   const { botToken, chatId } = getTelegramConfig();
   const BASE_URL = `https://api.telegram.org/bot${botToken}`;
-  const text = buildNewsMessage(item);
+  const text = buildNewsMessage(item, summary);
 
   await axios.post(`${BASE_URL}/sendMessage`, {
     chat_id: chatId,
@@ -200,7 +261,17 @@ export async function trackRssFeed(feedConfig: FeedConfig): Promise<void> {
 
   for (const item of newItems) {
     try {
-      await sendNewsAlert(item);
+      let summary: string | undefined;
+      if (shouldSummarize(item)) {
+        try {
+          const articleText = await fetchArticleText(item.link);
+          summary = (await summarizeArticle(item.title, articleText)) ?? undefined;
+          console.log(`${tag} Resumo gerado para: ${item.title}`);
+        } catch (err) {
+          console.warn(`${tag} Falha ao gerar resumo, enviando sem resumo: ${formatError(err)}`);
+        }
+      }
+      await sendNewsAlert(item, summary);
       seen.add(item.guid);
       console.log(`${tag} Enviado: ${item.title}`);
     } catch (err) {

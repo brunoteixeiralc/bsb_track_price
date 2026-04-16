@@ -2,7 +2,19 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import fs from "fs";
 import path from "path";
-import { parseRssItems, isMilhaRelated, isKeywordRelated, buildNewsMessage, loadSeenGuids, saveSeenGuids, runNewsTracker, trackRssFeed, RssItem } from "../services/news";
+
+// Mock do Anthropic SDK — deve vir antes de qualquer import que o utilize
+jest.mock("@anthropic-ai/sdk", () => {
+  const mockCreate = jest.fn();
+  return {
+    __esModule: true,
+    default: jest.fn().mockImplementation(() => ({
+      messages: { create: mockCreate },
+    })),
+    _mockCreate: mockCreate, // exposto para os testes acessarem
+  };
+});
+import { parseRssItems, isMilhaRelated, isKeywordRelated, buildNewsMessage, loadSeenGuids, saveSeenGuids, runNewsTracker, trackRssFeed, shouldSummarize, fetchArticleText, summarizeArticle, RssItem } from "../services/news";
 
 // news.ts lê diretamente das env vars, sem usar config.ts
 process.env.TELEGRAM_BOT_TOKEN = "test-token";
@@ -413,5 +425,222 @@ describe("trackRssFeed", () => {
     mock.onGet(/queroviajarnafaixa/).networkError();
 
     await expect(trackRssFeed(offersConfig)).rejects.toThrow();
+  });
+});
+
+// ── Helpers para acessar o mock do Anthropic SDK ──────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const anthropicMock = require("@anthropic-ai/sdk");
+const getMockCreate = (): jest.Mock => anthropicMock._mockCreate;
+
+// ── shouldSummarize ───────────────────────────────────────────────────────────
+
+describe("shouldSummarize", () => {
+  const base: RssItem = { guid: "g", title: "Título neutro", link: "https://ex.com", description: "" };
+
+  afterEach(() => {
+    delete process.env.ANTHROPIC_API_KEY;
+  });
+
+  it("retorna false quando ANTHROPIC_API_KEY não está definida", () => {
+    delete process.env.ANTHROPIC_API_KEY;
+    expect(shouldSummarize({ ...base, description: "texto curto" })).toBe(false);
+  });
+
+  it("retorna false quando score >= 2 (descrição longa + percentual)", () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    const item = { ...base, description: "A".repeat(160), title: "Smiles com bônus de 100%" };
+    expect(shouldSummarize(item)).toBe(false);
+  });
+
+  it("retorna false quando título + descrição têm nome de programa e valor monetário", () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    const item = { ...base, title: "Livelo promove transferência por R$ 0,01", description: "Promoção válida até fim do mês com condições especiais para os usuários do programa Livelo disponíveis." };
+    expect(shouldSummarize(item)).toBe(false);
+  });
+
+  it("retorna true quando descrição é curta e sem dados concretos", () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    const item = { ...base, description: "Saiba mais sobre essa novidade." };
+    expect(shouldSummarize(item)).toBe(true);
+  });
+
+  it("retorna true quando título é clickbait e descrição é curta", () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    const item = { ...base, title: "Descubra como ganhar milhas grátis", description: "Veja a oferta" };
+    expect(shouldSummarize(item)).toBe(true);
+  });
+
+  it("retorna false quando contém data específica e descrição longa", () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    const item = { ...base, title: "Promoção válida até 30/06", description: "A".repeat(160) };
+    expect(shouldSummarize(item)).toBe(false);
+  });
+});
+
+// ── fetchArticleText ──────────────────────────────────────────────────────────
+
+describe("fetchArticleText", () => {
+  it("retorna texto limpo sem tags HTML", async () => {
+    mock.onGet("https://exemplo.com/artigo").reply(200, "<html><body><p>Texto do artigo</p></body></html>");
+    const text = await fetchArticleText("https://exemplo.com/artigo");
+    expect(text).toContain("Texto do artigo");
+    expect(text).not.toContain("<p>");
+  });
+
+  it("trunca texto com mais de 1500 palavras e adiciona '…'", async () => {
+    const longHtml = Array.from({ length: 1600 }, (_, i) => `palavra${i}`).join(" ");
+    mock.onGet("https://exemplo.com/longo").reply(200, longHtml);
+    const text = await fetchArticleText("https://exemplo.com/longo");
+    const wordCount = text.replace("…", "").trim().split(/\s+/).length;
+    expect(wordCount).toBeLessThanOrEqual(1500);
+    expect(text.endsWith("…")).toBe(true);
+  });
+
+  it("lança erro quando a URL está indisponível", async () => {
+    mock.onGet("https://exemplo.com/erro").networkError();
+    await expect(fetchArticleText("https://exemplo.com/erro")).rejects.toThrow();
+  });
+});
+
+// ── summarizeArticle ──────────────────────────────────────────────────────────
+
+describe("summarizeArticle", () => {
+  afterEach(() => {
+    delete process.env.ANTHROPIC_API_KEY;
+    getMockCreate().mockReset();
+  });
+
+  it("retorna null quando ANTHROPIC_API_KEY não está definida", async () => {
+    delete process.env.ANTHROPIC_API_KEY;
+    const result = await summarizeArticle("Título", "Texto do artigo");
+    expect(result).toBeNull();
+  });
+
+  it("retorna o texto dos bullet points quando a API responde com sucesso", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    getMockCreate().mockResolvedValue({
+      content: [{ type: "text", text: "• Ponto 1\n• Ponto 2\n• Ponto 3" }],
+    });
+    const result = await summarizeArticle("Título", "Texto do artigo");
+    expect(result).toBe("• Ponto 1\n• Ponto 2\n• Ponto 3");
+  });
+
+  it("retorna null quando o content block não é do tipo text", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    getMockCreate().mockResolvedValue({
+      content: [{ type: "tool_use", id: "x", name: "x", input: {} }],
+    });
+    const result = await summarizeArticle("Título", "Texto");
+    expect(result).toBeNull();
+  });
+
+  it("lança erro quando a API falha", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    getMockCreate().mockRejectedValue(new Error("API error"));
+    await expect(summarizeArticle("Título", "Texto")).rejects.toThrow("API error");
+  });
+});
+
+// ── buildNewsMessage com summary ──────────────────────────────────────────────
+
+describe("buildNewsMessage com summary", () => {
+  const item: RssItem = {
+    guid: "g",
+    title: "Smiles com bônus de 100%",
+    link: "https://passageirodeprimeira.com/smiles",
+    description: "Descrição do artigo RSS.",
+  };
+
+  it("com summary: contém '📝 *Resumo:*' e não contém a descrição RSS", () => {
+    const msg = buildNewsMessage(item, "• Ponto 1\n• Ponto 2");
+    expect(msg).toContain("📝 *Resumo:*");
+    expect(msg).toContain("• Ponto 1");
+    expect(msg).not.toContain("Descrição do artigo RSS.");
+  });
+
+  it("com summary: contém o link antes do resumo", () => {
+    const msg = buildNewsMessage(item, "• Ponto 1");
+    const linkIdx = msg.indexOf("[Ler mais]");
+    const resumoIdx = msg.indexOf("📝 *Resumo:*");
+    expect(linkIdx).toBeLessThan(resumoIdx);
+  });
+
+  it("sem summary: mantém comportamento original com descrição e link", () => {
+    const msg = buildNewsMessage(item);
+    expect(msg).toContain("Descrição do artigo RSS.");
+    expect(msg).toContain("[Ler mais]");
+    expect(msg).not.toContain("📝 *Resumo:*");
+  });
+});
+
+// ── trackRssFeed com resumo ───────────────────────────────────────────────────
+
+describe("trackRssFeed com resumo (shouldSummarize ativo)", () => {
+  const config = {
+    rssUrl: "https://queroviajarnafaixa.com.br/category/ofertas/feed/",
+    keywords: [] as string[],
+    seenDbPath: "/tmp/offers-resume-test.json",
+    feedName: "offers-test",
+  };
+
+  beforeEach(() => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    jest.spyOn(fs, "readFileSync").mockImplementation(() => { throw new Error("ENOENT"); });
+    jest.spyOn(fs, "mkdirSync").mockReturnValue(undefined as any);
+    jest.spyOn(fs, "writeFileSync").mockReturnValue();
+  });
+
+  afterEach(() => {
+    delete process.env.ANTHROPIC_API_KEY;
+    getMockCreate().mockReset();
+  });
+
+  it("gera resumo e inclui '📝 *Resumo:*' na mensagem quando shouldSummarize retorna true", async () => {
+    // RSS com descrição curta → shouldSummarize = true
+    const rssShortDesc = `<rss><channel>
+      <item>
+        <title><![CDATA[Descubra como ganhar milhas]]></title>
+        <link>https://queroviajarnafaixa.com.br/milhas</link>
+        <guid>guid-milhas</guid>
+        <description><![CDATA[Veja a oferta]]></description>
+      </item>
+    </channel></rss>`;
+
+    mock.onGet(/queroviajarnafaixa.*feed/).reply(200, rssShortDesc);
+    mock.onGet("https://queroviajarnafaixa.com.br/milhas").reply(200, "<p>Texto do artigo completo sobre milhas.</p>");
+    getMockCreate().mockResolvedValue({
+      content: [{ type: "text", text: "• Ponto 1\n• Ponto 2" }],
+    });
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    await trackRssFeed(config);
+
+    expect(mock.history.post).toHaveLength(1);
+    const body = JSON.parse(mock.history.post[0].data);
+    expect(body.text).toContain("📝 *Resumo:*");
+    expect(body.text).toContain("• Ponto 1");
+  });
+
+  it("envia sem resumo quando fetch do artigo falha (fallback silencioso)", async () => {
+    const rssShortDesc = `<rss><channel>
+      <item>
+        <title><![CDATA[Descubra como ganhar milhas]]></title>
+        <link>https://queroviajarnafaixa.com.br/milhas-erro</link>
+        <guid>guid-milhas-erro</guid>
+        <description><![CDATA[Veja]]></description>
+      </item>
+    </channel></rss>`;
+
+    mock.onGet(/queroviajarnafaixa.*feed/).reply(200, rssShortDesc);
+    mock.onGet("https://queroviajarnafaixa.com.br/milhas-erro").networkError();
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    await trackRssFeed(config);
+
+    expect(mock.history.post).toHaveLength(1);
+    const body = JSON.parse(mock.history.post[0].data);
+    expect(body.text).not.toContain("📝 *Resumo:*");
   });
 });
