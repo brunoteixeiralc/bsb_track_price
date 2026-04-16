@@ -1,4 +1,4 @@
-name: Test Summarize (Claude API)
+name: Test Summarize (Open Router)
 
 # Roda SOMENTE quando acionado manualmente — nunca por push ou cron.
 # Serve para validar que a integração com a Claude API está funcionando:
