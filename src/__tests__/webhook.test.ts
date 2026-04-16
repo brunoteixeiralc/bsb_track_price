@@ -102,6 +102,7 @@ describe("Webhook Multi-usuário", () => {
     it("permite editar preço de um alerta existente", async () => {
       mock.onPost(/sendMessage/).reply(200, { ok: true });
       (userService.isUserAuthorized as jest.Mock).mockResolvedValue(true);
+      (userService.updateAlertPrice as jest.Mock).mockResolvedValue(true);
 
       await handleUpdate({
         update_id: 4,
@@ -116,6 +117,26 @@ describe("Webhook Multi-usuário", () => {
       expect(userService.updateAlertPrice).toHaveBeenCalledWith("987654321", 5, 600);
       const body = JSON.parse(mock.history.post[0].data);
       expect(body.text).toContain("atualizado para R$ 600");
+    });
+
+    it("permite remover um alerta existente", async () => {
+      mock.onPost(/sendMessage/).reply(200, { ok: true });
+      (userService.isUserAuthorized as jest.Mock).mockResolvedValue(true);
+      (userService.removeAlert as jest.Mock).mockResolvedValue(true);
+
+      await handleUpdate({
+        update_id: 5,
+        message: {
+          message_id: 5,
+          chat: { id: userChatId, type: "private" },
+          text: "/remover 10",
+          from: { id: userChatId, first_name: "User" }
+        }
+      });
+
+      expect(userService.removeAlert).toHaveBeenCalledWith("987654321", 10);
+      const body = JSON.parse(mock.history.post[0].data);
+      expect(body.text).toContain("removido com sucesso");
     });
   });
 });
