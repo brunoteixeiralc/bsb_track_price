@@ -177,6 +177,7 @@ async function handleCallbackQuery(
   data: string
 ): Promise<void> {
   if (fromId !== config.telegram.chatId) {
+    console.warn(`[webhook] callback_query de ID não-admin: recebido=${fromId}, esperado=${config.telegram.chatId}`);
     await answerCallbackQuery(callbackQueryId, "❌ Ação não permitida.");
     return;
   }
@@ -336,9 +337,14 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
   const [rawCmd, ...args] = text.split(/\s+/);
   const cmd = rawCmd.split("@")[0].toLowerCase();
 
-  // /start é sempre público
+  // /start e /meuid são sempre públicos
   if (cmd === "/start") {
     await handleStart(chatId, firstName, username);
+    return;
+  }
+
+  if (cmd === "/meuid") {
+    await sendReply(chatId, `🆔 Seu ID do Telegram: \`${chatId}\`\n\nSe você é o administrador, confirme que \`TELEGRAM_CHAT_ID\` no Railway está igual a este número.`);
     return;
   }
 
