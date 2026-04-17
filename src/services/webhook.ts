@@ -7,7 +7,8 @@ import { getDb } from "./db";
 
 const BASE_URL = `https://api.telegram.org/bot${config.telegram.botToken}`;
 const TIMEOUT_MS = 10_000;
-const WEBHOOK_PORT = Number(process.env.WEBHOOK_PORT ?? "3000");
+// Railway injeta $PORT dinamicamente — tem prioridade sobre WEBHOOK_PORT
+const WEBHOOK_PORT = Number(process.env.PORT ?? process.env.WEBHOOK_PORT ?? "3000");
 
 // ── Tipos Telegram ──────────────────────────────────────────────────────────
 
@@ -388,19 +389,32 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
 // ── Servidor HTTP ───────────────────────────────────────────────────────────
 
 export function startWebhookServer(): void {
-  const server = http.createServer(async (req, res) => {
+  const server = http.createServer((req, res) => {
+    // Health checks do Railway (GET) não têm body — responde e ignora
+    if (req.method !== "POST") {
+      res.writeHead(200);
+      res.end("OK");
+      return;
+    }
+
     let body = "";
     req.on("data", (chunk) => (body += chunk.toString()));
-    req.on("end", async () => {
-      try {
-        const update: TelegramUpdate = JSON.parse(body);
-        await handleUpdate(update);
-      } catch (err) {
-        console.error("[webhook] Erro no body:", err);
-      } finally {
-        res.writeHead(200);
-        res.end("OK");
-      }
+    req.on("end", () => {
+      // Responde 200 imediatamente para o Telegram não reenviar por timeout
+      res.writeHead(200);
+      res.end("OK");
+
+      if (!body) return;
+
+      // Processa de forma assíncrona após responder
+      (async () => {
+        try {
+          const update: TelegramUpdate = JSON.parse(body);
+          await handleUpdate(update);
+        } catch (err) {
+          console.error("[webhook] Erro ao processar update:", err instanceof Error ? err.message : err);
+        }
+      })();
     });
   });
 
