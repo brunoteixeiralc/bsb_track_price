@@ -7,6 +7,15 @@ export interface User {
   is_authorized: boolean;
 }
 
+/** Registro completo do usuário tal como está no banco */
+export interface UserRecord {
+  chat_id: string;
+  username?: string;
+  first_name?: string;
+  /** -1 = recusado · 0 = pendente · 1 = autorizado */
+  is_authorized: number;
+}
+
 export interface UserAlert {
   id?: number;
   chat_id: string;
@@ -32,7 +41,24 @@ export async function saveUser(chatId: string, firstName?: string, username?: st
   });
 }
 
-/** Verifica se um usuário está autorizado */
+/** Retorna o registro completo do usuário, ou null se não existir */
+export async function getUserInfo(chatId: string): Promise<UserRecord | null> {
+  const db = getDb();
+  const result = await db.execute({
+    sql: "SELECT chat_id, first_name, username, is_authorized FROM users WHERE chat_id = ?",
+    args: [chatId],
+  });
+  const row = result.rows[0];
+  if (!row) return null;
+  return {
+    chat_id: String(row.chat_id),
+    first_name: row.first_name ? String(row.first_name) : undefined,
+    username: row.username ? String(row.username) : undefined,
+    is_authorized: Number(row.is_authorized),
+  };
+}
+
+/** Verifica se um usuário está autorizado (is_authorized === 1) */
 export async function isUserAuthorized(chatId: string): Promise<boolean> {
   const db = getDb();
   const result = await db.execute({
@@ -40,7 +66,25 @@ export async function isUserAuthorized(chatId: string): Promise<boolean> {
     args: [chatId],
   });
   const row = result.rows[0];
-  return row ? Boolean(row.is_authorized) : false;
+  return row ? Number(row.is_authorized) === 1 : false;
+}
+
+/** Autoriza um usuário (is_authorized = 1) */
+export async function authorizeUser(chatId: string): Promise<void> {
+  const db = getDb();
+  await db.execute({
+    sql: "UPDATE users SET is_authorized = 1 WHERE chat_id = ?",
+    args: [chatId],
+  });
+}
+
+/** Recusa um usuário (is_authorized = -1) */
+export async function rejectUser(chatId: string): Promise<void> {
+  const db = getDb();
+  await db.execute({
+    sql: "UPDATE users SET is_authorized = -1 WHERE chat_id = ?",
+    args: [chatId],
+  });
 }
 
 /** Adiciona um novo alerta de viagem */
