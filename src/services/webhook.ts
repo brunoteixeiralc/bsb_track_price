@@ -325,6 +325,9 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
   const msg = update.message;
   if (!msg?.text) return;
 
+  // Bot é estritamente privado — ignora grupos, supergrupos e canais
+  if (msg.chat.type !== "private") return;
+
   const chatId    = String(msg.chat.id);
   const firstName = msg.from?.first_name;
   const username  = msg.from?.username;

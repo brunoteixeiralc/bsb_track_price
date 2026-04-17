@@ -85,6 +85,42 @@ beforeEach(() => {
   (userService.rejectUser       as jest.Mock).mockResolvedValue(undefined);
 });
 
+// ── Chat privado apenas ────────────────────────────────────────────────────
+
+describe("Mensagens de grupo são ignoradas", () => {
+  it("não responde a mensagens vindas de grupos", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    await handleUpdate({
+      update_id: 99,
+      message: {
+        message_id: 1,
+        chat: { id: -100123456, type: "group" },
+        text: "/start",
+        from: { id: USER_ID, first_name: "João" },
+      },
+    });
+
+    expect(mock.history.post).toHaveLength(0);
+  });
+
+  it("não responde a mensagens de supergrupos", async () => {
+    mock.onPost(/sendMessage/).reply(200, { ok: true });
+
+    await handleUpdate({
+      update_id: 100,
+      message: {
+        message_id: 2,
+        chat: { id: -100999999, type: "supergroup" },
+        text: "/alerta BSB GRU 01/01/2027 400",
+        from: { id: USER_ID, first_name: "João" },
+      },
+    });
+
+    expect(mock.history.post).toHaveLength(0);
+  });
+});
+
 // ── /start ─────────────────────────────────────────────────────────────────
 
 describe("/start", () => {
