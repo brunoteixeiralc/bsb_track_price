@@ -6,21 +6,38 @@ import { loadHistory } from "./history";
 import { formatBRL } from "./currency";
 import { sendReply } from "./webhook";
 
-export async function handleBuscar(chatId: number, destination: string): Promise<void> {
-  if (!destination) {
-    await sendReply(chatId, "❌ Uso: `/buscar DESTINO` — Ex: `/buscar GRU`");
+export async function handleBuscar(chatId: number, args: string[]): Promise<void> {
+  if (args.length === 0) {
+    await sendReply(chatId, "❌ *Uso detalhado do comando /buscar:*\n\n1️⃣ `/buscar DESTINO`\n_(Usa a origem padrão e a data configurada no sistema)_\n\n2️⃣ `/buscar ORIGEM DESTINO`\n_(Usa a data configurada no sistema)_\n\n3️⃣ `/buscar ORIGEM DESTINO DATA_IDA`\n_(Busca numa data específica. Ex: /buscar BSB GRU 20/07/2026)_");
     return;
   }
 
-  const dest = destination.toUpperCase();
-  await sendReply(chatId, `🔍 Buscando voos ${config.search.origin} → ${dest}, aguarde...`);
+  let origin = config.search.origin;
+  let dest = "";
+  let depDate = config.search.departureDate;
+
+  if (args.length === 1) {
+    dest = args[0].toUpperCase();
+  } else if (args.length === 2) {
+    origin = args[0].toUpperCase();
+    dest = args[1].toUpperCase();
+  } else if (args.length >= 3) {
+    origin = args[0].toUpperCase();
+    dest = args[1].toUpperCase();
+    let dDate = args[2];
+    if (dDate.includes("/")) dDate = dDate.split("/").reverse().join("-");
+    depDate = dDate;
+  }
+
+  await sendReply(chatId, `🔍 Buscando voos...\n🛫 ${origin} → ${dest}\n📅 Data: ${depDate}\n\nAguarde, isso pode levar alguns segundos...`);
 
   const params: SearchParams = {
-    origin: config.search.origin,
+    origin,
     destination: dest,
-    departureDate: config.search.departureDate,
-    returnDate: config.search.returnDate,
-    tripType: config.search.tripType,
+    departureDate: depDate,
+    returnDate: undefined,
+    tripType: "one-way",
+    ignoreMaxPrice: true,
   };
 
   let flights;

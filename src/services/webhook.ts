@@ -133,7 +133,7 @@ async function handleStart(chatId: string, firstName?: string, username?: string
       "👋 Olá, Administrador! Você está autorizado.\n\n" +
       "Comandos:\n" +
       "/status — Ver configuração\n" +
-      "/buscar DESTINO — Busca rápida\n" +
+      "/buscar — Veja opções detalhadas de busca rápida\n" +
       "/alerta ORIGEM DESTINO DATA PRECO\n" +
       "/meusalertas — Lista alertas\n" +
       "/autorizar ID — Autoriza novo usuário"
@@ -378,7 +378,7 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
       await sendReply(chatId, `✅ *Status Admin*\n🕐 ${now}\n🛫 Origem padrão: ${config.search.origin}\n🚀 Servidor Railway Ativo`);
     } else if (cmd === "/buscar") {
       const { handleBuscar } = await import("./webhook_legacy");
-      await handleBuscar(parseInt(chatId), args.join(" "));
+      await handleBuscar(parseInt(chatId), args);
     }
   } catch (err) {
     console.error(`[webhook] Erro no comando ${cmd}:`, err);

@@ -33,6 +33,7 @@ export interface SearchParams {
   departureDate: string;
   returnDate?: string;
   tripType: TripType;
+  ignoreMaxPrice?: boolean;
 }
 
 export interface HistoryEntry {

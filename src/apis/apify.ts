@@ -94,7 +94,7 @@ export async function searchWithApify(params: SearchParams): Promise<Flight[]> {
     gl: "br",
     exclude_basic: false,
     max_pages: 1,
-    max_price: maxPriceUSD,
+    ...(params.ignoreMaxPrice ? {} : { max_price: maxPriceUSD }),
     ...(config.filters.maxStops !== undefined
       ? { max_stops: config.filters.maxStops }
       : {}),
