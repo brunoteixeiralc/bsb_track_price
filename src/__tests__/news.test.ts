@@ -60,6 +60,7 @@ describe("News Service (Turso Sync)", () => {
       // Mock do DB: Guid não visto (rows vazio)
       const mockExecute = jest.fn()
         .mockResolvedValueOnce({ rows: [] }) // Para isGuidSeen
+        .mockResolvedValueOnce({ rows: [{ chat_id: "123456" }] }) // Para getSubscribedUsers
         .mockResolvedValueOnce({ rowsAffected: 1 }); // Para markGuidAsSeen
 
       jest.spyOn(dbService, "getDb").mockReturnValue({
