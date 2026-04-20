@@ -14,6 +14,7 @@ export interface UserRecord {
   first_name?: string;
   /** -1 = recusado · 0 = pendente · 1 = autorizado */
   is_authorized: number;
+  receives_news: number;
 }
 
 export interface UserAlert {
@@ -45,7 +46,7 @@ export async function saveUser(chatId: string, firstName?: string, username?: st
 export async function getUserInfo(chatId: string): Promise<UserRecord | null> {
   const db = getDb();
   const result = await db.execute({
-    sql: "SELECT chat_id, first_name, username, is_authorized FROM users WHERE chat_id = ?",
+    sql: "SELECT chat_id, first_name, username, is_authorized, receives_news FROM users WHERE chat_id = ?",
     args: [chatId],
   });
   const row = result.rows[0];
@@ -55,6 +56,7 @@ export async function getUserInfo(chatId: string): Promise<UserRecord | null> {
     first_name: row.first_name ? String(row.first_name) : undefined,
     username: row.username ? String(row.username) : undefined,
     is_authorized: Number(row.is_authorized),
+    receives_news: Number(row.receives_news ?? 1),
   };
 }
 
@@ -167,4 +169,29 @@ export async function getAllActiveAlerts(): Promise<UserAlert[]> {
     max_price_brl: Number(row.max_price_brl),
     is_active: Boolean(row.is_active),
   }));
+}
+
+/** Alterna o recebimento de notícias/ofertas e retorna o novo estado */
+export async function toggleNewsPreference(chatId: string): Promise<boolean> {
+  const db = getDb();
+  const info = await getUserInfo(chatId);
+  if (!info) return false;
+  
+  const newState = info.receives_news === 1 ? 0 : 1;
+  await db.execute({
+    sql: "UPDATE users SET receives_news = ? WHERE chat_id = ?",
+    args: [newState, chatId]
+  });
+  
+  return newState === 1;
+}
+
+/** Busca todos os usuários autorizados que querem receber notícias/ofertas */
+export async function getSubscribedUsers(): Promise<string[]> {
+  const db = getDb();
+  const result = await db.execute(`
+    SELECT chat_id FROM users
+    WHERE is_authorized = 1 AND receives_news = 1
+  `);
+  return result.rows.map(row => String(row.chat_id));
 }

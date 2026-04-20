@@ -1,5 +1,6 @@
 import axios, { isAxiosError } from "axios";
 import { getDb } from "./db";
+import { getSubscribedUsers } from "./user";
 
 function formatError(err: unknown): string {
   if (isAxiosError(err)) {
@@ -173,16 +174,23 @@ export function buildNewsMessage(item: RssItem, summary?: string): string {
 
 export async function sendNewsAlert(item: RssItem, summary?: string): Promise<void> {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-  if (!botToken || !chatId) return;
+  if (!botToken) return;
 
   const text = buildNewsMessage(item, summary);
-  await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-    chat_id: chatId,
-    text,
-    parse_mode: "Markdown",
-    disable_web_page_preview: false,
-  }, { timeout: TIMEOUT_MS });
+  const usersToNotify = await getSubscribedUsers();
+
+  for (const chatId of usersToNotify) {
+    try {
+      await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        chat_id: chatId,
+        text,
+        parse_mode: "Markdown",
+        disable_web_page_preview: false,
+      }, { timeout: TIMEOUT_MS });
+    } catch (err) {
+      console.error(`[news] Erro ao enviar alerta para ${chatId}: ${formatError(err)}`);
+    }
+  }
 }
 
 // ── Main Tracker ────────────────────────────────────────────────────────────

@@ -49,9 +49,16 @@ export async function initTables(): Promise<void> {
       username TEXT,
       first_name TEXT,
       is_authorized INTEGER DEFAULT 0,
+      receives_news INTEGER DEFAULT 1,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  try {
+    await db.execute("ALTER TABLE users ADD COLUMN receives_news INTEGER DEFAULT 1");
+  } catch (e) {
+    // Ignora se a coluna já existir
+  }
 
   // Tabela de Alertas (Nova para Multi-usuário)
   await db.execute(`

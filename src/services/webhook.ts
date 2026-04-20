@@ -136,6 +136,7 @@ async function handleStart(chatId: string, firstName?: string, username?: string
       "/buscar — Veja opções detalhadas de busca rápida\n" +
       "/alerta ORIGEM DESTINO DATA PRECO\n" +
       "/meusalertas — Lista alertas\n" +
+      "/noticias — Ligar ou desligar ofertas\n" +
       "/autorizar ID — Autoriza novo usuário"
     );
     return;
@@ -143,7 +144,7 @@ async function handleStart(chatId: string, firstName?: string, username?: string
 
   // Já autorizado
   if (existingUser?.is_authorized === 1) {
-    await sendReply(chatId, `👋 Olá ${firstName}! Você está autorizado.\n\nUse /alerta para monitorar passagens.`);
+    await sendReply(chatId, `👋 Olá ${firstName}! Você está autorizado.\n\nComandos:\n/alerta - Monitorar passagens\n/meusalertas - Gerenciar alertas\n/noticias - Ligar/desligar ofertas`);
     return;
   }
 
@@ -198,7 +199,7 @@ async function handleCallbackQuery(
     await sendReply(
       targetId,
       "🎉 Seu acesso foi *aprovado*!\n\n" +
-      "Use `/alerta ORIGEM DESTINO DATA PRECO` para começar a monitorar passagens."
+      "Use `/alerta ORIGEM DESTINO DATA PRECO` para começar a monitorar passagens.\nUse `/noticias` para gerenciar o recebimento de ofertas."
     );
     if (messageId) {
       await editMessageText(
@@ -225,7 +226,7 @@ async function handleAutorizar(adminId: string, targetId: string): Promise<void>
   if (adminId !== config.telegram.chatId) return;
   await userService.authorizeUser(targetId);
   await sendReply(adminId, `✅ Usuário \`${targetId}\` autorizado com sucesso!`);
-  await sendReply(targetId, "🎉 Você acaba de ser *autorizado*.\n\nUse `/alerta ORIGEM DESTINO DATA PRECO` para começar.");
+  await sendReply(targetId, "🎉 Você acaba de ser *autorizado*.\n\nUse `/alerta ORIGEM DESTINO DATA PRECO` para começar.\nUse `/noticias` para gerenciar ofertas.");
 }
 
 async function handleNovoAlerta(chatId: string, args: string[]): Promise<void> {
@@ -371,6 +372,13 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
       }
     } else if (cmd === "/editar") {
       await handleEditarAlerta(chatId, args);
+    } else if (cmd === "/noticias" || cmd === "/ofertas") {
+      const isNowEnabled = await userService.toggleNewsPreference(chatId);
+      if (isNowEnabled) {
+        await sendReply(chatId, "✅ *Notícias e Ofertas ativadas!*\nVocê passará a receber novidades sobre milhas, cartões e passagens.");
+      } else {
+        await sendReply(chatId, "🔕 *Notícias e Ofertas silenciadas.*\nVocê não receberá mais notificações avulsas (seus alertas de voos continuam funcionando).");
+      }
     } else if (cmd === "/autorizar") {
       await handleAutorizar(chatId, args[0]);
     } else if (cmd === "/status") {
