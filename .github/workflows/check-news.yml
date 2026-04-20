@@ -36,6 +36,7 @@ jobs:
           echo "Feed 1: https://passageirodeprimeira.com/categorias/noticias/feed/"
           echo "Feed 2: https://passageirodeprimeira.com/categorias/promocoes/feed/"
           echo "Feed 3: https://pontospravoar.com/feed/"
+          echo "Feed 4: https://mestredasmilhas.com/feed/"
           echo "TELEGRAM: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && 'definido ✓' || 'NÃO definido ✗' }}"
           echo "========================"
 

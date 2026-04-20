@@ -234,4 +234,5 @@ export async function runNewsTracker(): Promise<void> {
   await trackRssFeed({ rssUrl: RSS_URL, keywords: MILHA_KEYWORDS, feedName: "news" });
   await trackRssFeed({ rssUrl: RSS_URL_PROMOCOES, keywords: MILHA_KEYWORDS, feedName: "news-promocoes" });
   await trackRssFeed({ rssUrl: "https://pontospravoar.com/feed/", keywords: MILHA_KEYWORDS, feedName: "news-pontospravoar" });
+  await trackRssFeed({ rssUrl: "https://mestredasmilhas.com/feed/", keywords: MILHA_KEYWORDS, feedName: "news-mestredasmilhas" });
 }
