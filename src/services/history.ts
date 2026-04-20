@@ -149,6 +149,16 @@ export async function getWeeklySummary(now: Date = new Date()): Promise<WeeklyRo
   return summaries.sort((a, b) => a.route.localeCompare(b.route));
 }
 
+/** 
+ * Busca todo o histórico para o Dashboard. 
+ * Ordenado por timestamp para facilitar o gráfico de linha.
+ */
+export async function getFullHistory(): Promise<HistoryEntry[]> {
+  const db = getDb();
+  const result = await db.execute("SELECT * FROM history ORDER BY timestamp ASC");
+  return result.rows.map(rowToEntry);
+}
+
 function rowToEntry(row: any): HistoryEntry {
   return {
     timestamp: row.timestamp as string,

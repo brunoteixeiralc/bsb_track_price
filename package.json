@@ -13,6 +13,7 @@
     "start:webhook": "node dist/webhook.js",
     "typecheck": "tsc --noEmit",
     "migrate": "ts-node src/migrate-history.ts",
+    "dashboard": "ts-node src/scripts/generate-dashboard.ts",
     "test": "jest"
   },
   "jest": {
