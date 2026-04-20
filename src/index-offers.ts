@@ -13,6 +13,12 @@ async function main() {
       keywords: [], // aceita todas as ofertas — feed já filtrado pela categoria
       feedName: "offers",
     });
+
+    await trackRssFeed({
+      rssUrl: "https://pontospravoar.com/category/promocoes/feed/",
+      keywords: [],
+      feedName: "offers",
+    });
     
     console.log("✅ Busca de ofertas concluída.");
     process.exit(0);
