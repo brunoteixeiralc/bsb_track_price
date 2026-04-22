@@ -6,7 +6,7 @@ import { sendFlightAlert, sendDateRangeSummary, sendErrorAlert } from "./telegra
 import { appendHistory, getLastCheapestPrice } from "./history";
 import { withRetry } from "../utils/retry";
 import { getAllActiveAlerts, UserAlert, deactivateAlert } from "./user";
-import { formatBRL } from "./currency";
+import { formatBRL, getUSDtoBRL } from "./currency";
 import { sendReply } from "./webhook";
 
 export async function runTracker(): Promise<void> {
@@ -115,7 +115,21 @@ async function processAlert(alert: UserAlert): Promise<void> {
     // Exceto se for a primeira vez (lastPrice === null)
     if (!lastPrice || currentCheapest <= lastPrice * config.search.priceDropThreshold) {
       const bestFlight = flights.sort((a,b) => a.priceBRL - b.priceBRL)[0];
-      await sendFlightAlert(bestFlight, false, alert.chat_id);
+
+      // Detecta se o preço está em nível histórico baixo usando dados do Google Flights (Apify)
+      let isHistoricLow = false;
+      const insights = bestFlight.priceInsights;
+      if (insights) {
+        if (insights.priceLevel === "low") {
+          isHistoricLow = true;
+        } else if (insights.lowestPrice) {
+          // Compara com o menor preço histórico (convertido para BRL com margem de 5%)
+          const usdToBRL = await getUSDtoBRL();
+          isHistoricLow = bestFlight.priceBRL <= insights.lowestPrice * usdToBRL * 1.05;
+        }
+      }
+
+      await sendFlightAlert(bestFlight, isHistoricLow, alert.chat_id);
     }
   }
 }
