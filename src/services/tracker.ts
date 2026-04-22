@@ -5,8 +5,9 @@ import { searchWithRapidAPI } from "../apis/rapidapi";
 import { sendFlightAlert, sendDateRangeSummary, sendErrorAlert } from "./telegram";
 import { appendHistory, getLastCheapestPrice } from "./history";
 import { withRetry } from "../utils/retry";
-import { getAllActiveAlerts, UserAlert } from "./user";
+import { getAllActiveAlerts, UserAlert, deactivateAlert } from "./user";
 import { formatBRL } from "./currency";
+import { sendReply } from "./webhook";
 
 export async function runTracker(): Promise<void> {
   console.log("[tracker] Iniciando rodada de verificação...");
@@ -35,11 +36,26 @@ export async function runTracker(): Promise<void> {
     }
   }
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   // 3. Executa cada busca
-  // Dica futurista: Aqui poderíamos agrupar por rota/data para economizar API, 
-  // mas vamos focar na funcionalidade primeiro.
   for (const alert of allTasks) {
     try {
+      // Verifica se o alerta expirou (data de ida já passou)
+      if (alert.id && new Date(alert.departure_date) < today) {
+        await deactivateAlert(alert.id);
+        await sendReply(
+          alert.chat_id,
+          `⏰ Alerta expirado e desativado automaticamente.\n\n` +
+          `🛫 *${alert.origin} → ${alert.destination}*\n` +
+          `📅 Data: ${alert.departure_date}\n\n` +
+          `_Use /alerta para criar um novo._`
+        );
+        console.log(`[tracker] Alerta #${alert.id} expirado (${alert.departure_date}). Desativado.`);
+        continue;
+      }
+
       await processAlert(alert);
     } catch (err) {
       console.error(`[tracker] Erro no alerta ${alert.origin}→${alert.destination}:`, err);

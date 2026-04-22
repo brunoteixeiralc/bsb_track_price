@@ -139,6 +139,15 @@ export async function removeAlert(chatId: string, alertId: number): Promise<bool
   return Number(result.rowsAffected) > 0;
 }
 
+/** Desativa um alerta (soft-delete — mantém no banco para histórico) */
+export async function deactivateAlert(alertId: number): Promise<void> {
+  const db = getDb();
+  await db.execute({
+    sql: "UPDATE alerts SET is_active = 0 WHERE id = ?",
+    args: [alertId],
+  });
+}
+
 /** Atualiza o preço máximo de um alerta */
 export async function updateAlertPrice(chatId: string, alertId: number, newPrice: number): Promise<boolean> {
   const db = getDb();
