@@ -4,6 +4,8 @@ import { config } from "../config";
 import { formatBRL } from "./currency";
 import * as userService from "./user";
 import { getDb } from "./db";
+import { getRoutePriceHistory, getRouteLowestPrice } from "./history";
+import { calcTrend, bestDayOfWeek } from "../utils/priceHistory";
 
 const BASE_URL = `https://api.telegram.org/bot${config.telegram.botToken}`;
 const TIMEOUT_MS = 10_000;
@@ -310,6 +312,81 @@ async function handleEditarAlerta(chatId: string, args: string[]): Promise<void>
   );
 }
 
+async function handleTendencia(chatId: string, args: string[]): Promise<void> {
+  if (args.length < 2) {
+    await sendReply(chatId, "❌ Formato: `/tendencia ORIGEM DESTINO`\nEx: `/tendencia BSB GRU`");
+    return;
+  }
+
+  const origin = args[0].toUpperCase();
+  const destination = args[1].toUpperCase();
+  const route = `${origin} → ${destination}`;
+
+  await sendReply(chatId, `🔍 Analisando tendência de *${route}*...`);
+
+  const priceData = await getRoutePriceHistory(origin, destination);
+
+  if (priceData.length < 2) {
+    await sendReply(chatId, `📊 *${route}*\n\nSem dados suficientes para análise de tendência.\nO tracker precisa de pelo menos 2 registros para essa rota.`);
+    return;
+  }
+
+  const trend = calcTrend(priceData, 7);
+  const bestDay = bestDayOfWeek(priceData);
+  const lowestEver = await getRouteLowestPrice(origin, destination);
+
+  // Preço mais recente
+  const latestPrice = priceData[priceData.length - 1][1];
+
+  const lines = [`📈 *Tendência ${route}* (últimos 7 dias)`, ""];
+
+  // Direção da tendência
+  if (trend) {
+    const emoji = trend.direction === "down" ? "📉" : trend.direction === "up" ? "📈" : "➡️";
+    const label = trend.direction === "down"
+      ? `Queda de ${trend.pct}%`
+      : trend.direction === "up"
+        ? `Alta de +${trend.pct}%`
+        : "Estável";
+    lines.push(`📊 Direção: ${emoji} ${label}`);
+  } else {
+    lines.push(`📊 Direção: ➡️ Sem dados suficientes na última semana`);
+  }
+
+  // Preço atual e menor histórico
+  lines.push(`💰 Último preço: *${formatBRL(latestPrice)}*`);
+  if (lowestEver !== null) {
+    lines.push(`🏆 Menor preço já registrado: *${formatBRL(lowestEver)}*`);
+  }
+
+  // Melhor dia da semana
+  if (bestDay) {
+    lines.push(`📅 Melhor dia para comprar: *${bestDay.dayName}* (média ${formatBRL(bestDay.avgPrice)})`);
+  }
+
+  // Insight
+  lines.push("");
+  if (trend) {
+    if (trend.direction === "down" && trend.pct <= -5) {
+      lines.push(`🔮 _Preços estão em queda significativa. Pode ser boa hora de comprar!_`);
+    } else if (trend.direction === "down") {
+      lines.push(`🔮 _Leve tendência de queda. Vale acompanhar nos próximos dias._`);
+    } else if (trend.direction === "up" && trend.pct >= 10) {
+      lines.push(`🔮 _Preços subindo forte. Considere comprar logo ou esperar uma correção._`);
+    } else if (trend.direction === "up") {
+      lines.push(`🔮 _Preços em leve alta. Fique atento a oportunidades._`);
+    } else {
+      lines.push(`🔮 _Preços estáveis. Bom momento para monitorar._`);
+    }
+  } else {
+    lines.push(`🔮 _Continue monitorando — mais dados gerarão insights melhores._`);
+  }
+
+  lines.push("", `_Baseado em ${priceData.length} registro(s) no histórico._`);
+
+  await sendReply(chatId, lines.join("\n"));
+}
+
 // ── Dispatcher principal ────────────────────────────────────────────────────
 
 export async function handleUpdate(update: TelegramUpdate): Promise<void> {
@@ -387,6 +464,8 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
     } else if (cmd === "/buscar") {
       const { handleBuscar } = await import("./webhook_legacy");
       await handleBuscar(parseInt(chatId), args);
+    } else if (cmd === "/tendencia") {
+      await handleTendencia(chatId, args);
     }
   } catch (err) {
     console.error(`[webhook] Erro no comando ${cmd}:`, err);

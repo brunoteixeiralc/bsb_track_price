@@ -159,6 +159,44 @@ export async function getFullHistory(): Promise<HistoryEntry[]> {
   return result.rows.map(rowToEntry);
 }
 
+/**
+ * Retorna o histórico de preços de uma rota no formato [timestamp_unix_segundos, preço_BRL][].
+ * Compatível com calcTrend() e bestDayOfWeek() de priceHistory.ts.
+ */
+export async function getRoutePriceHistory(
+  origin: string,
+  destination: string
+): Promise<[number, number][]> {
+  const db = getDb();
+  const result = await db.execute({
+    sql: `SELECT timestamp, cheapestPriceBRL FROM history
+          WHERE origin = ? AND destination = ? AND cheapestPriceBRL IS NOT NULL
+          ORDER BY timestamp ASC`,
+    args: [origin, destination],
+  });
+
+  return result.rows.map((row) => [
+    Math.floor(new Date(row.timestamp as string).getTime() / 1000),
+    Number(row.cheapestPriceBRL),
+  ]);
+}
+
+/** Retorna o menor preço já registrado para uma rota */
+export async function getRouteLowestPrice(
+  origin: string,
+  destination: string
+): Promise<number | null> {
+  const db = getDb();
+  const result = await db.execute({
+    sql: `SELECT MIN(cheapestPriceBRL) as minPrice FROM history
+          WHERE origin = ? AND destination = ? AND cheapestPriceBRL IS NOT NULL`,
+    args: [origin, destination],
+  });
+
+  const row = result.rows[0];
+  return row?.minPrice !== null && row?.minPrice !== undefined ? Number(row.minPrice) : null;
+}
+
 function rowToEntry(row: any): HistoryEntry {
   return {
     timestamp: row.timestamp as string,
