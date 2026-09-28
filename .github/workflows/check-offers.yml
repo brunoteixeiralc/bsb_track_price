@@ -29,7 +29,6 @@ jobs:
         run: |
           echo "===== CONFIGURAÇÃO ====="
           echo "Feed 1: https://queroviajarnafaixa.com.br/category/ofertas/feed/"
-          echo "Feed 2: https://pontospravoar.com/category/promocoes/feed/"
           echo "TELEGRAM: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && 'definido ✓' || 'NÃO definido ✗' }}"
           echo "========================"
 
