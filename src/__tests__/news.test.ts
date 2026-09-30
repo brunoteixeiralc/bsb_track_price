@@ -30,6 +30,11 @@ const RSS_WITH_MILHA = `<?xml version="1.0" encoding="UTF-8"?>
   </channel>
 </rss>`;
 
+const EMPTY_RSS = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel></channel>
+</rss>`;
+
 describe("News Service (Turso Sync)", () => {
   beforeEach(() => {
     mock.reset();
@@ -133,6 +138,21 @@ describe("News Service (Turso Sync)", () => {
         description: "curta" 
       };
       expect(shouldSummarize(item)).toBe(true);
+    });
+  });
+
+  describe("runNewsTracker", () => {
+    it("processa apenas os feeds configurados", async () => {
+      mock.onGet(/.*/).reply(200, EMPTY_RSS);
+
+      await runNewsTracker();
+
+      const requestedUrls = mock.history.get.map((request) => request.url ?? "");
+      expect(requestedUrls).toHaveLength(3);
+      expect(requestedUrls).toContain("https://passageirodeprimeira.com/categorias/noticias/feed/");
+      expect(requestedUrls).toContain("https://passageirodeprimeira.com/categorias/promocoes/feed/");
+      expect(requestedUrls).toContain("https://mestredasmilhas.com/feed/");
+      expect(requestedUrls).not.toContain("https://pontospravoar.com/feed/");
     });
   });
 });
